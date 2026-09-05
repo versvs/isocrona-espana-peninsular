@@ -39,6 +39,17 @@ El resultado es un mapa que "respira" y muta cada vez que cambias de capital: la
   - **Desvío Geográfico Fantasma (*Ghost offset*):** Dibuja dónde se situaría cada capital si la velocidad fuese homogénea e idéntica a la media peninsular, poniendo en evidencia la ventaja del AVE o el déficit de aislamiento.
   - **Radios por Modo:** Trazos diferenciados por Alta Velocidad, Tren convencional y Autobús.
   - **Etiquetas Inteligentes:** Algoritmo codicioso (*greedy*) de prevención de colisiones tipográficas flotantes en el espacio SVG.
+- 📊 **Ranking Comparativo de Conectividad (47 Capitales):**
+  - Vista modal flotante accesible (`Ver Ranking`) con cálculo reactivo de la centralidad de cada una de las 47 capitales peninsulares.
+  - **5 criterios de ordenación intercambiables:**
+    1. *Tiempo medio ponderado por población:* penaliza la desconexión con los grandes polos urbanos.
+    2. *Mediana ponderada por población:* umbral de tiempo para alcanzar a la mitad de los ciudadanos peninsulares.
+    3. *Tiempo medio a todas las capitales:* centralidad geométrica promedio en la red.
+    4. *Mediana de tiempo a capitales:* tiempo al 50% de las capitales provinciales.
+    5. *Accesibilidad en Alta Velocidad (% capitales en <3h):* capacidad de conexión en el mismo día sin pernocta.
+  - **Diseño enriquecido:** Distintivos de podio para el Top 3 (#1 Oro, #2 Plata, #3 Bronce), etiquetas de tipología de nodo (*Alta Velocidad*, *Convencional*, *Autobús*), y barras de magnitud relativa proporcionales frente a la primera posición.
+  - **Filtro reactivo con "Efecto Contexto" (Truncamiento elíptico):** Al buscar una capital concreta (ej. *Palencia*), la tabla mantiene el Top 3 inmutable como ancla de referencia, inserta divisores de puntos suspensivos con el conteo de capitales intermedias ocultas, atenúa los vecinos inmediato superior e inferior, resalta la capital buscada y fija la última posición como ancla inferior.
+  - **Acción rápida "Centrar en mapa":** Permite convertir inmediatamente cualquier ciudad del ranking en el nuevo origen del cartograma radial.
 - 🎨 **Industrial Design System (Blueprint):**
   - Dos modos de visualización calibrados: **Papel** (modo claro técnico de alta legibilidad) y **Acero** (modo oscuro de contraste analítico).
   - Estética arquitectónica y de ingeniería de precisión (*blueprint corners*, tipografías Barlow y Barlow Condensed).

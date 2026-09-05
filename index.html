@@ -102,6 +102,7 @@
     .rail::-webkit-scrollbar-track { background: transparent; }
 
     .destrow:hover { background: var(--color-accent-100); }
+    .ranking-row:hover { background: var(--color-accent-100); }
     input[type=range] { accent-color: var(--color-accent); }
 
     /* Blueprint corners styling */
@@ -199,6 +200,10 @@
         <svg width="22" height="6"><line x1="0" y1="3" x2="22" y2="3" id="leg-bus-line" stroke="#98989b" stroke-width="1.5" stroke-dasharray="3 3"></line></svg>Autobús
       </span>
       <button id="btn-help-modal" style="display:flex; align-items:center; gap:5px; padding:4px 9px; background:transparent; border:1px solid var(--color-divider); cursor:pointer; font-family:var(--font-heading); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--color-text)">Cómo se lee</button>
+      <button id="btn-ranking-modal" style="display:flex; align-items:center; gap:5px; padding:4px 9px; background:transparent; border:1px solid var(--color-divider); cursor:pointer; font-family:var(--font-heading); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--color-text)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+        Ver Ranking
+      </button>
       
       <div style="display:flex; border:1px solid var(--color-divider)">
         <button id="btn-theme-papel" style="padding:4px 10px; background:var(--color-accent); color:var(--color-bg); border:0; cursor:pointer; font-family:var(--font-heading); font-size:11px; letter-spacing:0.08em; text-transform:uppercase">Papel</button>
@@ -385,6 +390,7 @@
     <span style="margin-right:auto">Tiempos calculados con Dijkstra multimodal sobre corredores de ferrocarril, alta velocidad y autobús · penalización de transbordo 12 min</span>
     <nav style="display:flex; align-items:center; gap:var(--space-4); font-family:var(--font-heading); font-size:12px; letter-spacing:0.06em; text-transform:uppercase">
       <a href="https://www.josealcantara.com/" target="_blank" rel="noopener">Web personal</a>
+      <a href="#" id="btn-ranking-footer">Ranking</a>
       <a href="#" id="btn-methodology">Metodología</a>
       <a href="https://github.com/versvs/isocrona-espana-peninsular" target="_blank" rel="noopener">Código</a>
     </nav>
@@ -554,6 +560,64 @@
       <div style="display:flex; align-items:center; justify-content:space-between; padding:var(--space-3) var(--space-6); border-top:1px solid var(--color-divider); background:var(--color-surface)">
         <span style="font-size:11.5px; color:var(--color-neutral-700)">Isócrona España · Cartograma Polar Interactivo</span>
         <button id="btn-close-methodology-bottom" class="btn btn-primary" style="padding:6px 14px">Cerrar y volver al mapa</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL RANKING DE CONECTIVIDAD -->
+  <div id="ranking-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="ranking-modal-title" style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; padding:var(--space-4); background:color-mix(in srgb, var(--color-bg) 85%, transparent); backdrop-filter:blur(4px); z-index:200;">
+    <div class="blueprint" style="background:var(--color-bg); width:min(940px, 96vw); max-height:90vh; display:flex; flex-direction:column; box-shadow:var(--shadow-lg); border:1px solid var(--color-divider);">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+
+      <!-- Cabecera del modal -->
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:var(--space-4) var(--space-6); border-bottom:1px solid var(--color-divider); background:var(--color-surface)">
+        <div>
+          <div style="font-family:var(--font-heading); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent-700)">07 — Análisis Comparativo Territorial</div>
+          <h2 id="ranking-modal-title" style="font-family:var(--font-heading); font-weight:700; font-size:22px; text-transform:uppercase; letter-spacing:-0.01em; line-height:1.1; margin-top:2px">Ranking de Conectividad Ferroviaria</h2>
+        </div>
+        <button id="btn-close-ranking-top" class="btn" style="padding:4px 10px; font-size:15px; border:1px solid var(--color-divider); cursor:pointer; line-height:1" title="Cerrar ventana" aria-label="Cerrar">✕</button>
+      </div>
+
+      <!-- Barra de controles y búsqueda -->
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:var(--space-4); padding:var(--space-3) var(--space-6); background:var(--color-surface); border-bottom:1px solid var(--color-divider); flex-wrap:wrap">
+        <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:280px">
+          <label for="ranking-sort-select" style="font-family:var(--font-heading); font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--color-neutral-700); white-space:nowrap">Criterio:</label>
+          <select id="ranking-sort-select" class="input" style="height:32px; font-size:12.5px; cursor:pointer; padding:4px 8px; border-radius:0; max-width:340px">
+            <option value="avgPop">Tiempo medio ponderado por población</option>
+            <option value="medianPop">Mediana ponderada por población</option>
+            <option value="avgCap">Tiempo medio a todas las capitales</option>
+            <option value="medianCap">Mediana de tiempo a capitales</option>
+            <option value="pctUnder3h">Accesibilidad en Alta Velocidad (% capitales en &lt;3h)</option>
+          </select>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; width:min(260px, 100%)">
+          <input type="search" id="ranking-search-input" class="input" placeholder="Buscar capital (ej. Palencia)…" style="height:32px; font-size:12.5px; border-radius:0">
+        </div>
+      </div>
+
+      <!-- Contenedor scrollable con la tabla -->
+      <div class="rail" style="flex:1 1 auto; overflow-y:auto; overflow-x:auto; padding:0; font-size:13px; line-height:1.5">
+        <table id="ranking-table" style="width:100%; border-collapse:collapse; text-align:left">
+          <thead style="position:sticky; top:0; z-index:10; background:var(--color-surface); border-bottom:2px solid var(--color-divider)">
+            <tr style="font-family:var(--font-heading); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--color-neutral-700)">
+              <th style="padding:9px 12px; width:54px; text-align:center">#</th>
+              <th style="padding:9px 14px">Capital / Provincia</th>
+              <th style="padding:9px 12px; width:130px">Red</th>
+              <th id="th-ranking-metric" style="padding:9px 12px; width:150px">Valor métrica</th>
+              <th style="padding:9px 14px; width:170px">Magnitud relativa</th>
+              <th style="padding:9px 14px; width:140px; text-align:right">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="ranking-table-body">
+            <!-- Filas generadas reactivamente -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pie del modal -->
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:var(--space-3) var(--space-6); border-top:1px solid var(--color-divider); background:var(--color-surface); font-size:11.5px; color:var(--color-neutral-700); flex-wrap:wrap; gap:8px">
+        <span id="ranking-footer-info">47 capitales peninsulares · Criterio activo: Tiempo medio ponderado por población</span>
+        <button id="btn-close-ranking-bottom" class="btn btn-primary" style="padding:6px 14px">Cerrar y volver al mapa</button>
       </div>
     </div>
   </div>
@@ -1445,10 +1509,374 @@
       if (e.target === methModal) closeMethodology();
     });
 
+    // =========================================================================
+    // MODAL DE RANKING DE CONECTIVIDAD (47 CAPITALES PENINSULARES)
+    // =========================================================================
+    const rankingModal = document.getElementById('ranking-modal-overlay');
+    const btnRankingModal = document.getElementById('btn-ranking-modal');
+    const btnRankingFooter = document.getElementById('btn-ranking-footer');
+    const btnCloseRankingTop = document.getElementById('btn-close-ranking-top');
+    const btnCloseRankingBottom = document.getElementById('btn-close-ranking-bottom');
+    const rankingSortSelect = document.getElementById('ranking-sort-select');
+    const rankingSearchInput = document.getElementById('ranking-search-input');
+    const rankingTableBody = document.getElementById('ranking-table-body');
+    const thRankingMetric = document.getElementById('th-ranking-metric');
+    const rankingFooterInfo = document.getElementById('ranking-footer-info');
+
+    const CRITERIA_INFO = {
+      avgPop: {
+        label: 'Tiempo medio ponderado por población',
+        thLabel: 'Tiempo medio pop.',
+        higherIsBetter: false,
+        formatVal: (item) => fmt(item.avgPop)
+      },
+      medianPop: {
+        label: 'Mediana ponderada por población',
+        thLabel: 'Mediana pop. (50%)',
+        higherIsBetter: false,
+        formatVal: (item) => fmt(item.medianPop)
+      },
+      avgCap: {
+        label: 'Tiempo medio a todas las capitales',
+        thLabel: 'Media a capitales',
+        higherIsBetter: false,
+        formatVal: (item) => fmt(item.avgCap)
+      },
+      medianCap: {
+        label: 'Mediana de tiempo a capitales',
+        thLabel: 'Mediana a capitales',
+        higherIsBetter: false,
+        formatVal: (item) => fmt(item.medianCap)
+      },
+      pctUnder3h: {
+        label: 'Accesibilidad en Alta Velocidad (% capitales en <3h)',
+        thLabel: 'Cap. en < 3h',
+        higherIsBetter: true,
+        formatVal: (item) => `${item.pctUnder3h.toFixed(1)}% <span style="font-size:11px; color:var(--color-neutral-600)">(${item.under3Count} cap.)</span>`
+      }
+    };
+
+    let rankingDataCache = null;
+
+    function getAllCapitalsConnectivityMetrics() {
+      if (rankingDataCache) return rankingDataCache;
+
+      const list = CAPS.map(c => {
+        const orig = c[0];
+        const sol = solveDijkstra(orig);
+        const dests = CAPS.filter(x => x[0] !== orig).map(x => {
+          const destName = x[0];
+          const pop = x[4];
+          const min = sol.dist[destName];
+          return { name: destName, pop, min };
+        }).sort((a, b) => a.min - b.min);
+
+        const edges = GRAPH[orig] || [];
+        const hasAve = edges.some(e => e[2] === 'ave');
+        const hasTren = edges.some(e => e[2] === 'tren');
+        const nodeType = hasAve ? 'Alta Velocidad' : (hasTren ? 'Convencional' : 'Autobús');
+
+        // 1. avgPop (ponderado por población)
+        const totalOtherPop = dests.reduce((s, d) => s + d.pop, 0);
+        const sumPopTime = dests.reduce((s, d) => s + d.min * d.pop, 0);
+        const avgPop = sumPopTime / totalOtherPop;
+
+        // 2. medianPop (tiempo para alcanzar el 50% de la población peninsular)
+        let cumPop = c[4];
+        let medianPop = 0;
+        if (cumPop >= TOTAL_PENINSULAR_POP / 2) {
+          medianPop = 0;
+        } else {
+          for (const d of dests) {
+            cumPop += d.pop;
+            if (cumPop >= TOTAL_PENINSULAR_POP / 2) {
+              medianPop = d.min;
+              break;
+            }
+          }
+        }
+
+        // 3. avgCap (tiempo medio aritmético a todas las capitales)
+        const avgCap = dests.reduce((s, d) => s + d.min, 0) / dests.length;
+
+        // 4. medianCap (tiempo a la mediana de capitales)
+        const medianCap = (dests[22].min + dests[23].min) / 2;
+
+        // 5. pctUnder3h (% de capitales en menos de 180 min)
+        const under3 = dests.filter(d => d.min <= 180).length;
+        const pctUnder3h = (under3 / dests.length) * 100;
+
+        return {
+          name: orig,
+          prov: c[1],
+          pop: c[4],
+          nodeType,
+          avgPop,
+          medianPop,
+          avgCap,
+          medianCap,
+          pctUnder3h,
+          under3Count: under3
+        };
+      });
+
+      rankingDataCache = list;
+      return list;
+    }
+
+    function getSortedRanking(criterion) {
+      const raw = getAllCapitalsConnectivityMetrics().slice();
+      const isHigher = CRITERIA_INFO[criterion]?.higherIsBetter;
+
+      raw.sort((a, b) => {
+        const valA = a[criterion];
+        const valB = b[criterion];
+        if (isHigher) {
+          if (valB !== valA) return valB - valA;
+        } else {
+          if (valA !== valB) return valA - valB;
+        }
+        return a.avgPop - b.avgPop;
+      });
+
+      return raw;
+    }
+
+    function getRowsToDisplay(rankedList, searchQuery) {
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) {
+        return {
+          type: 'full',
+          items: rankedList.map((item, idx) => ({ type: 'row', item, rank: idx + 1, isMatch: false, isContextNeighbor: false }))
+        };
+      }
+
+      const matchedRanks = [];
+      rankedList.forEach((item, idx) => {
+        if (item.name.toLowerCase().includes(q) || item.prov.toLowerCase().includes(q)) {
+          matchedRanks.push(idx + 1);
+        }
+      });
+
+      if (matchedRanks.length === 0) {
+        return { type: 'no-match', items: [] };
+      }
+
+      const indicesToShow = new Set([1, 2, 3]);
+      indicesToShow.add(rankedList.length);
+
+      matchedRanks.forEach(r => {
+        indicesToShow.add(r);
+        if (r > 1) indicesToShow.add(r - 1);
+        if (r < rankedList.length) indicesToShow.add(r + 1);
+      });
+
+      const sortedIndices = Array.from(indicesToShow).sort((a, b) => a - b);
+      const displayItems = [];
+
+      for (let k = 0; k < sortedIndices.length; k++) {
+        const currentRank = sortedIndices[k];
+        if (k > 0) {
+          const prevRank = sortedIndices[k - 1];
+          const gap = currentRank - prevRank - 1;
+          if (gap > 0) {
+            displayItems.push({
+              type: 'divider',
+              gapCount: gap,
+              text: `•••• ${gap} ${gap === 1 ? 'capital intermedia' : 'capitales intermedias'} ••••`
+            });
+          }
+        }
+
+        const item = rankedList[currentRank - 1];
+        const isMatch = matchedRanks.includes(currentRank);
+        const isTop3 = currentRank <= 3;
+        const isAnchor = currentRank === rankedList.length;
+        const isContextNeighbor = !isMatch && !isTop3 && !isAnchor;
+
+        displayItems.push({
+          type: 'row',
+          item,
+          rank: currentRank,
+          isMatch,
+          isContextNeighbor
+        });
+      }
+
+      return { type: 'context', items: displayItems, matchedRanks };
+    }
+
+    function renderRankingTable() {
+      const criterion = rankingSortSelect.value || 'avgPop';
+      const query = rankingSearchInput.value || '';
+      const info = CRITERIA_INFO[criterion] || CRITERIA_INFO.avgPop;
+
+      thRankingMetric.textContent = info.thLabel;
+      rankingFooterInfo.textContent = `47 capitales peninsulares · Criterio activo: ${info.label}`;
+
+      const sortedList = getSortedRanking(criterion);
+      const displayData = getRowsToDisplay(sortedList, query);
+
+      rankingTableBody.innerHTML = '';
+
+      if (displayData.type === 'no-match') {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td colspan="6" style="padding:28px var(--space-4); text-align:center; color:var(--color-neutral-600); font-style:italic">
+            No se encontró ninguna capital con el término "${query}".
+          </td>
+        `;
+        rankingTableBody.appendChild(tr);
+        return;
+      }
+
+      const bestVal = sortedList[0][criterion];
+
+      displayData.items.forEach(entry => {
+        if (entry.type === 'divider') {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td colspan="6" style="padding:7px 14px; text-align:center; font-family:var(--font-heading); font-size:11.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--color-neutral-600); background:color-mix(in srgb, var(--color-surface) 75%, transparent); border-top:1px dashed var(--color-divider); border-bottom:1px dashed var(--color-divider)">
+              ${entry.text}
+            </td>
+          `;
+          rankingTableBody.appendChild(tr);
+          return;
+        }
+
+        const { item, rank, isMatch, isContextNeighbor } = entry;
+        const tr = document.createElement('tr');
+        tr.className = 'ranking-row';
+
+        // Estilos de resaltado o atenuación contextual
+        let rowStyle = 'border-bottom:1px solid var(--color-neutral-200); transition:background 0.1s;';
+        if (isMatch) {
+          rowStyle += ' background:var(--color-accent-100); border-left:4px solid var(--color-accent); font-weight:600;';
+        } else if (isContextNeighbor) {
+          rowStyle += ' opacity:0.55;';
+        }
+        tr.setAttribute('style', rowStyle);
+
+        // 1. Badge del Puesto (#)
+        let rankBadgeHtml = '';
+        if (rank === 1) {
+          rankBadgeHtml = `<span style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:22px; font-weight:700; font-size:11.5px; background:color-mix(in srgb, #f59e0b 24%, var(--color-surface)); color:#d97706; border:1px solid #f59e0b; border-radius:var(--radius-sm)">1</span>`;
+        } else if (rank === 2) {
+          rankBadgeHtml = `<span style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:22px; font-weight:700; font-size:11.5px; background:color-mix(in srgb, var(--color-neutral-400) 25%, var(--color-surface)); color:var(--color-neutral-800); border:1px solid var(--color-neutral-400); border-radius:var(--radius-sm)">2</span>`;
+        } else if (rank === 3) {
+          rankBadgeHtml = `<span style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:22px; font-weight:700; font-size:11.5px; background:color-mix(in srgb, #b45309 22%, var(--color-surface)); color:#9a3412; border:1px solid #b45309; border-radius:var(--radius-sm)">3</span>`;
+        } else {
+          rankBadgeHtml = `<span style="font-family:var(--font-heading); font-size:13px; font-weight:600; color:var(--color-neutral-600); font-variant-numeric:tabular-nums">${rank}</span>`;
+        }
+
+        // 2. Etiqueta de Nodo Ferroviario
+        let nodeBadgeHtml = '';
+        if (item.nodeType === 'Alta Velocidad') {
+          nodeBadgeHtml = `<span style="display:inline-block; font-size:10px; font-family:var(--font-heading); font-weight:600; letter-spacing:0.04em; text-transform:uppercase; padding:2px 6px; border-radius:var(--radius-sm); background:var(--color-accent-900); color:var(--color-bg)">Alta Velocidad</span>`;
+        } else if (item.nodeType === 'Convencional') {
+          nodeBadgeHtml = `<span style="display:inline-block; font-size:10px; font-family:var(--font-heading); font-weight:600; letter-spacing:0.04em; text-transform:uppercase; padding:2px 6px; border-radius:var(--radius-sm); background:var(--color-accent-100); color:var(--color-accent-800); border:1px solid var(--color-accent-300)">Convencional</span>`;
+        } else {
+          nodeBadgeHtml = `<span style="display:inline-block; font-size:10px; font-family:var(--font-heading); font-weight:500; letter-spacing:0.04em; text-transform:uppercase; padding:2px 6px; border-radius:var(--radius-sm); background:var(--color-neutral-200); color:var(--color-neutral-700); border:1px solid var(--color-neutral-300)">Autobús</span>`;
+        }
+
+        // 3. Valor de la Métrica
+        const formattedMetric = info.formatVal(item);
+
+        // 4. Barra de Magnitud Relativa
+        let barPct = 100;
+        let ratioStr = '1.00×';
+        const curVal = item[criterion];
+
+        if (info.higherIsBetter) {
+          if (bestVal > 0) {
+            barPct = Math.max(8, Math.min(100, Math.round((curVal / bestVal) * 100)));
+            ratioStr = (curVal / bestVal).toFixed(2) + '×';
+          } else {
+            barPct = 0;
+            ratioStr = '0.00×';
+          }
+        } else {
+          if (curVal > 0 && bestVal > 0) {
+            barPct = Math.max(12, Math.min(100, Math.round((bestVal / curVal) * 100)));
+            ratioStr = (curVal / bestVal).toFixed(2) + '×';
+          }
+        }
+
+        const relativeBarHtml = `
+          <div style="display:flex; align-items:center; gap:8px; width:100%">
+            <div style="flex:1; height:6px; background:var(--color-neutral-200); border-radius:1px; overflow:hidden">
+              <div style="width:${barPct}%; height:100%; background:var(--color-accent)"></div>
+            </div>
+            <span style="font-family:var(--font-heading); font-size:11px; color:var(--color-neutral-700); font-variant-numeric:tabular-nums; min-width:32px; text-align:right">${ratioStr}</span>
+          </div>
+        `;
+
+        // 5. Acción Rápida
+        const isCurrentOrigin = (item.name.toLowerCase() === state.origin.toLowerCase());
+        const actionHtml = isCurrentOrigin
+          ? `<span style="font-size:11px; font-family:var(--font-heading); letter-spacing:0.06em; text-transform:uppercase; color:var(--color-accent-700); font-weight:600">● Origen activo</span>`
+          : `<button class="btn btn-sm" style="padding:3px 8px; font-size:11px; border-radius:0; white-space:nowrap" data-action="center-origin" data-city="${item.name}">Centrar en mapa</button>`;
+
+        tr.innerHTML = `
+          <td style="padding:8px 12px; text-align:center">${rankBadgeHtml}</td>
+          <td style="padding:8px 14px">
+            <div style="font-family:var(--font-heading); font-size:14px; font-weight:600; text-transform:uppercase; letter-spacing:0.02em; color:var(--color-text)">${item.name}</div>
+            <div style="font-size:11px; color:var(--color-neutral-700)">${item.prov}</div>
+          </td>
+          <td style="padding:8px 12px">${nodeBadgeHtml}</td>
+          <td style="padding:8px 12px; font-family:var(--font-heading); font-size:13.5px; font-variant-numeric:tabular-nums; color:var(--color-text)">${formattedMetric}</td>
+          <td style="padding:8px 14px">${relativeBarHtml}</td>
+          <td style="padding:8px 14px; text-align:right">${actionHtml}</td>
+        `;
+
+        rankingTableBody.appendChild(tr);
+      });
+    }
+
+    function openRankingModal(e) {
+      if (e) e.preventDefault();
+      rankingModal.style.display = 'flex';
+      renderRankingTable();
+      setTimeout(() => {
+        if (rankingSearchInput) rankingSearchInput.focus();
+      }, 50);
+    }
+
+    function closeRankingModal() {
+      rankingModal.style.display = 'none';
+    }
+
+    if (btnRankingModal) btnRankingModal.addEventListener('click', openRankingModal);
+    if (btnRankingFooter) btnRankingFooter.addEventListener('click', openRankingModal);
+    if (btnCloseRankingTop) btnCloseRankingTop.addEventListener('click', closeRankingModal);
+    if (btnCloseRankingBottom) btnCloseRankingBottom.addEventListener('click', closeRankingModal);
+
+    rankingModal.addEventListener('click', (e) => {
+      if (e.target === rankingModal) closeRankingModal();
+    });
+
+    rankingSortSelect.addEventListener('change', () => {
+      renderRankingTable();
+    });
+
+    rankingSearchInput.addEventListener('input', () => {
+      renderRankingTable();
+    });
+
+    rankingTableBody.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action="center-origin"]');
+      if (btn && btn.dataset.city) {
+        const city = btn.dataset.city;
+        closeRankingModal();
+        setOrigin(city);
+      }
+    });
+
     // Tecla Escape para cerrar cualquiera de los modales
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         closeMethodology();
+        closeRankingModal();
         if (helpModal) helpModal.style.display = 'none';
       }
     });
