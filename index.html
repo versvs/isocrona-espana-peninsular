@@ -167,11 +167,196 @@
     }
 
     @media (max-width: 990px) {
+      .app-header {
+        flex-wrap: wrap;
+        align-items: flex-start !important;
+      }
+
+      .app-brand {
+        min-width: 0;
+      }
+
+      .top-controls {
+        flex-wrap: wrap;
+        white-space: normal !important;
+      }
+
       .main-grid {
+        width: 100%;
         grid-template-columns: 240px 1fr;
       }
       .right-rail {
+        display: block;
+        grid-column: 1 / -1;
+        min-width: 0;
+        width: 100%;
+        max-height: none;
+        overflow: visible;
+        border-left: 0 !important;
+        border-top: 1px solid var(--color-divider);
+      }
+    }
+
+    @media (max-width: 700px) {
+      body {
+        height: auto;
+        min-height: 100dvh;
+        overflow-x: hidden;
+        overflow-y: auto;
+      }
+
+      .app-layout {
+        height: auto;
+        min-height: 100dvh;
+        display: block;
+        overflow: visible;
+      }
+
+      .app-header {
+        align-items: flex-start !important;
+        flex-wrap: wrap;
+        gap: var(--space-3) !important;
+        padding: 12px var(--space-4) 10px !important;
+      }
+
+      .app-brand {
+        width: 100%;
+        align-items: baseline !important;
+        gap: 7px !important;
+      }
+
+      .app-brand > span:first-child,
+      .app-brand > span:nth-child(2) {
+        font-size: 20px !important;
+      }
+
+      .app-brand > span:last-child {
         display: none;
+      }
+
+      .top-controls {
+        width: 100%;
+        justify-content: space-between;
+        gap: var(--space-2) !important;
+        white-space: normal !important;
+      }
+
+      .top-controls > span {
+        display: none !important;
+      }
+
+      .top-controls > button,
+      .top-controls > div {
+        flex: 1 1 0;
+      }
+
+      .top-controls > button {
+        min-height: 36px;
+        padding: 7px 8px !important;
+      }
+
+      .top-controls > div:last-child {
+        display: flex;
+      }
+
+      .top-controls > div:last-child button {
+        flex: 1 1 50%;
+        min-height: 36px;
+        padding: 7px 6px !important;
+      }
+
+      .main-grid {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: visible;
+      }
+
+      .map-main {
+        order: 1;
+        width: 100%;
+        height: min(68svh, 620px);
+        min-height: 390px;
+        flex: 0 0 auto;
+      }
+
+      .map-main > div {
+        inset: var(--space-3) !important;
+      }
+
+      .map-main #map-frame > div:last-child {
+        left: var(--space-2) !important;
+        right: var(--space-2) !important;
+        bottom: var(--space-2) !important;
+        gap: 5px !important;
+        font-size: 9px !important;
+        letter-spacing: 0.07em !important;
+        flex-wrap: wrap;
+      }
+
+      .left-rail {
+        order: 2;
+        height: 310px;
+        flex: 0 0 auto;
+        border-right: 0 !important;
+        border-top: 1px solid var(--color-divider);
+      }
+
+      .left-rail > div:first-child {
+        padding: var(--space-4) !important;
+      }
+
+      .left-rail #destinations-list {
+        overflow-y: auto;
+      }
+
+      .right-rail {
+        order: 3;
+        display: block;
+        width: 100%;
+        max-height: none;
+        overflow: visible !important;
+        border-left: 0 !important;
+        border-top: 1px solid var(--color-divider);
+        padding: var(--space-4) !important;
+      }
+
+      .app-footer {
+        gap: var(--space-3) !important;
+        padding: var(--space-3) var(--space-4) !important;
+        align-items: flex-start !important;
+      }
+
+      .app-footer > span {
+        width: 100%;
+      }
+
+      .app-footer nav {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: var(--space-2) var(--space-4) !important;
+      }
+
+      #methodology-modal-overlay,
+      #ranking-modal-overlay {
+        padding: var(--space-2) !important;
+      }
+
+      #methodology-modal-overlay > .blueprint,
+      #ranking-modal-overlay > .blueprint {
+        width: 100% !important;
+        max-height: 94dvh !important;
+      }
+
+      #methodology-modal-overlay > .blueprint > div,
+      #ranking-modal-overlay > .blueprint > div {
+        padding-left: var(--space-4) !important;
+        padding-right: var(--space-4) !important;
+      }
+
+      #ranking-modal-overlay table {
+        min-width: 700px;
       }
     }
   </style>
@@ -181,15 +366,15 @@
 <div class="app-layout">
 
   <!-- CABECERA PRINCIPAL -->
-  <header style="display:flex; align-items:flex-end; gap:var(--space-6); padding:14px var(--space-6) 12px; border-bottom:1px solid var(--color-divider)">
-    <div style="display:flex; align-items:baseline; gap:10px; margin-right:auto; min-width:0">
+  <header class="app-header" style="display:flex; align-items:flex-end; gap:var(--space-6); padding:14px var(--space-6) 12px; border-bottom:1px solid var(--color-divider)">
+    <div class="app-brand" style="display:flex; align-items:baseline; gap:10px; margin-right:auto; min-width:0">
       <span style="font-family:var(--font-heading); font-weight:700; font-size:23px; letter-spacing:-0.01em; text-transform:uppercase">Isócrona</span>
       <span style="font-family:var(--font-heading); font-size:23px; color:var(--color-neutral-600); text-transform:uppercase">España</span>
       <span style="font-size:12px; color:var(--color-neutral-700); letter-spacing:0.02em; padding-left:var(--space-4); border-left:1px solid var(--color-divider)">Cartograma de tiempos de viaje en transporte público · 47 capitales peninsulares</span>
     </div>
 
     <!-- Leyenda y conmutadores superiores -->
-    <div style="display:flex; align-items:center; gap:var(--space-4); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--color-neutral-700); white-space:nowrap">
+    <div class="top-controls" style="display:flex; align-items:center; gap:var(--space-4); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--color-neutral-700); white-space:nowrap">
       <span style="display:flex; align-items:center; gap:6px">
         <svg width="22" height="6"><line x1="0" y1="3" x2="22" y2="3" id="leg-ave-line" stroke="#1d2d3d" stroke-width="2.5"></line></svg>Alta velocidad
       </span>
@@ -216,7 +401,7 @@
   <div class="main-grid">
 
     <!-- COLUMNA IZQUIERDA: 01 Origen y 02 Destinos -->
-    <aside class="rail" style="display:flex; flex-direction:column; min-height:0; border-right:1px solid var(--color-divider)">
+    <aside class="rail left-rail" style="display:flex; flex-direction:column; min-height:0; border-right:1px solid var(--color-divider)">
       <div style="padding:var(--space-4) var(--space-4) var(--space-3)">
         <div style="font-family:var(--font-heading); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-neutral-700); margin-bottom:8px">01 — Origen</div>
         <div id="ui-origin-name" style="font-family:var(--font-heading); font-weight:600; font-size:27px; line-height:1; text-transform:uppercase; letter-spacing:-0.01em">MADRID</div>
@@ -235,7 +420,7 @@
     </aside>
 
     <!-- COLUMNA CENTRAL: Blueprint Canvas del Mapa -->
-    <main style="position:relative; min-width:0; overflow:hidden; background:var(--color-bg)">
+    <main class="map-main" style="position:relative; min-width:0; overflow:hidden; background:var(--color-bg)">
       <div style="position:absolute; inset:var(--space-6) var(--space-4) var(--space-4)">
         <div class="blueprint" id="map-frame" style="position:absolute; inset:0">
           <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
@@ -386,7 +571,7 @@
   </div>
 
   <!-- PIE DE PÁGINA -->
-  <footer style="display:flex; align-items:center; gap:var(--space-6); flex-wrap:wrap; padding:9px var(--space-6); border-top:1px solid var(--color-divider); font-size:11.5px; color:var(--color-neutral-700)">
+  <footer class="app-footer" style="display:flex; align-items:center; gap:var(--space-6); flex-wrap:wrap; padding:9px var(--space-6); border-top:1px solid var(--color-divider); font-size:11.5px; color:var(--color-neutral-700)">
     <span style="margin-right:auto">Tiempos calculados con Dijkstra multimodal sobre corredores de ferrocarril, alta velocidad y autobús · penalización de transbordo 12 min</span>
     <nav style="display:flex; align-items:center; gap:var(--space-4); font-family:var(--font-heading); font-size:12px; letter-spacing:0.06em; text-transform:uppercase">
       <a href="https://www.josealcantara.com/" target="_blank" rel="noopener">Web personal</a>
