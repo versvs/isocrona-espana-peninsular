@@ -1,0 +1,2112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anamorfosis Temporal de España | Cartograma Polar de Isócronas</title>
+  <meta name="description" content="Visualización geoespacial interactiva de la deformación espacio-temporal de España según el tiempo de viaje terrestre en transporte público desde las 47 capitales peninsulares.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #070b14;
+      --bg-card: rgba(15, 23, 42, 0.82);
+      --bg-card-hover: rgba(30, 41, 59, 0.9);
+      --border-card: rgba(56, 189, 248, 0.18);
+      --border-accent: rgba(56, 189, 248, 0.45);
+      
+      --color-hspeed: #10b981;
+      --color-hspeed-glow: rgba(16, 185, 129, 0.35);
+      --color-train: #38bdf8;
+      --color-train-glow: rgba(56, 189, 248, 0.35);
+      --color-bus: #f59e0b;
+      --color-bus-glow: rgba(245, 158, 11, 0.35);
+      --color-ghost: #64748b;
+      --color-origin: #a855f7;
+      
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      --font-ui: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: radial-gradient(circle at 50% 20%, #0d172e 0%, #070b14 75%);
+      color: var(--text-main);
+      font-family: var(--font-ui);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Header y Navegación */
+    header {
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(7, 11, 20, 0.7);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #0284c7, #10b981);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+    }
+
+    .brand-icon svg { width: 24px; height: 24px; fill: white; }
+
+    .brand-title h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      background: linear-gradient(90deg, #f8fafc, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-title p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      margin-top: 1px;
+    }
+
+    .header-badge {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      background: rgba(56, 189, 248, 0.1);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 5px 12px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .header-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.4); opacity: 0.6; }
+    }
+
+    /* Layout Principal */
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 20px;
+      padding: 20px 24px;
+      max-width: 1680px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1180px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Panel Lateral de Controles & Métricas */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-card);
+      border-radius: 14px;
+      padding: 16px 18px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      transition: border-color 0.2s;
+    }
+
+    .card:hover {
+      border-color: var(--border-accent);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title svg {
+      width: 15px;
+      height: 15px;
+      stroke: #38bdf8;
+    }
+
+    /* Selector de Origen */
+    .origin-selector-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .search-box {
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      background: rgba(10, 16, 30, 0.9);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #fff;
+      padding: 10px 14px 10px 36px;
+      border-radius: 8px;
+      font-family: var(--font-ui);
+      font-size: 0.95rem;
+      font-weight: 500;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .search-box input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.3);
+    }
+
+    .search-box svg {
+      position: absolute;
+      left: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: #64748b;
+      pointer-events: none;
+    }
+
+    .quick-origins {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .chip-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      font-size: 0.76rem;
+      font-family: var(--font-ui);
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .chip-btn:hover {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: #38bdf8;
+      color: #38bdf8;
+    }
+
+    .chip-btn.active {
+      background: linear-gradient(135deg, #0284c7, #025091);
+      border-color: #38bdf8;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .autocomplete-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      margin-top: 4px;
+      max-height: 220px;
+      overflow-y: auto;
+      z-index: 50;
+      display: none;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.7);
+    }
+
+    .autocomplete-list.open { display: block; }
+
+    .autocomplete-item {
+      padding: 9px 12px;
+      font-size: 0.86rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      transition: background 0.15s;
+    }
+
+    .autocomplete-item:hover, .autocomplete-item.highlighted {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+    }
+
+    .autocomplete-item span.region {
+      color: var(--text-dim);
+      font-size: 0.74rem;
+    }
+
+    /* Telemetría y Métricas */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .metric-card {
+      background: rgba(8, 14, 26, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .metric-card.full-width {
+      grid-column: span 2;
+    }
+
+    .metric-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .demographic-bar-bg {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 4px 0 6px 0;
+    }
+
+    .demographic-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #38bdf8, #10b981);
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+      border-radius: 4px;
+      transition: width 0.6s cubic-bezier(0.2, 0.8, 0.4, 1);
+    }
+
+    .metric-dual-sub {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .metric-dual-sub strong {
+      color: #f1f5f9;
+      font-family: var(--font-mono);
+    }
+
+    .central-times-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      margin-top: 5px;
+    }
+
+    .time-item {
+      display: flex;
+      flex-direction: column;
+      background: rgba(15, 23, 42, 0.65);
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      text-align: center;
+    }
+
+    .time-sublabel {
+      font-size: 0.63rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+    }
+
+    .time-val {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    .time-subdesc {
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      margin-top: 1px;
+    }
+
+    .metric-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .metric-val {
+      font-family: var(--font-mono);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    .metric-val.accent { color: #38bdf8; }
+    .metric-val.hspeed { color: #10b981; }
+    .metric-val.warning { color: #f59e0b; }
+
+    .metric-sub {
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    /* Controles de Capas y Filtros */
+    .filter-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .filter-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.83rem;
+      color: #cbd5e1;
+      cursor: pointer;
+      user-select: none;
+      padding: 4px 0;
+    }
+
+    .filter-item:hover { color: #fff; }
+
+    .toggle-switch {
+      position: relative;
+      width: 38px;
+      height: 20px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #334155;
+      transition: .25s;
+      border-radius: 20px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .25s;
+      border-radius: 50%;
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+      background-color: #0284c7;
+    }
+
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(18px);
+    }
+
+    /* Slider de Escala */
+    .scale-control {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .scale-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .scale-slider {
+      width: 100%;
+      height: 6px;
+      background: #334155;
+      border-radius: 4px;
+      outline: none;
+      accent-color: #38bdf8;
+      cursor: pointer;
+    }
+
+    /* Leyenda Estricta y Detallada */
+    .legend-list {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      font-size: 0.78rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      line-height: 1.3;
+    }
+
+    .legend-symbol {
+      width: 26px;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .legend-line-hspeed {
+      width: 100%;
+      height: 3px;
+      background: var(--color-hspeed);
+      box-shadow: 0 0 6px var(--color-hspeed);
+      border-radius: 2px;
+    }
+
+    .legend-line-train {
+      width: 100%;
+      height: 2px;
+      background: var(--color-train);
+      box-shadow: 0 0 6px var(--color-train);
+    }
+
+    .legend-line-bus {
+      width: 100%;
+      height: 2px;
+      background: repeating-linear-gradient(90deg, var(--color-bus) 0px, var(--color-bus) 4px, transparent 4px, transparent 8px);
+    }
+
+    .legend-line-ghost {
+      width: 100%;
+      height: 1.5px;
+      background: repeating-linear-gradient(90deg, var(--color-ghost) 0px, var(--color-ghost) 3px, transparent 3px, transparent 6px);
+    }
+
+    .legend-label strong { color: #f1f5f9; font-weight: 600; display: block; }
+    .legend-label span { color: var(--text-dim); font-size: 0.72rem; }
+
+    /* Contenedor del Lienzo SVG */
+    .canvas-wrapper {
+      position: relative;
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-card);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      min-height: 720px;
+    }
+
+    .canvas-hud-top {
+      position: absolute;
+      top: 16px;
+      left: 20px;
+      right: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .hud-title-badge {
+      background: rgba(11, 18, 33, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      backdrop-filter: blur(10px);
+      padding: 8px 14px;
+      border-radius: 8px;
+      pointer-events: auto;
+    }
+
+    .hud-title-badge h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hud-title-badge span.origin-tag {
+      color: #38bdf8;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .hud-title-badge p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Zoom and Reset Controls */
+    .viewport-controls {
+      display: flex;
+      gap: 6px;
+      pointer-events: auto;
+      background: rgba(11, 18, 33, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 4px;
+      border-radius: 8px;
+    }
+
+    .viewport-btn {
+      width: 32px;
+      height: 32px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      border-radius: 6px;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .viewport-btn:hover {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: #38bdf8;
+      color: #38bdf8;
+    }
+
+    #svg-canvas {
+      width: 100%;
+      height: 100%;
+      flex: 1;
+      cursor: grab;
+      user-select: none;
+    }
+
+    #svg-canvas:active {
+      cursor: grabbing;
+    }
+
+    /* Estilos de Elementos SVG */
+    .isochrone-ring {
+      fill: none;
+      stroke: #1e293b;
+      stroke-width: 1.2px;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .isochrone-ring.key-ring {
+      stroke: rgba(56, 189, 248, 0.25);
+      stroke-dasharray: 4, 4;
+    }
+
+    .isochrone-ring-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      fill: #64748b;
+      letter-spacing: 0.5px;
+      text-anchor: middle;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .cardinal-axis {
+      stroke: rgba(255, 255, 255, 0.07);
+      stroke-width: 1px;
+      stroke-dasharray: 2, 4;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .cardinal-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      fill: #475569;
+      text-anchor: middle;
+      dominant-baseline: central;
+      user-select: none;
+    }
+
+    .cardinal-label.north { fill: #38bdf8; }
+
+    /* Deformed Hull */
+    .hull-path {
+      fill: rgba(2, 132, 199, 0.08);
+      stroke: rgba(56, 189, 248, 0.55);
+      stroke-width: 2px;
+      stroke-dasharray: 5, 3;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.25));
+      transition: d 0.6s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    /* Rayos y Líneas de Transporte */
+    .transport-line {
+      vector-effect: non-scaling-stroke;
+      transition: opacity 0.3s;
+    }
+
+    .transport-line.hspeed {
+      stroke: var(--color-hspeed);
+      stroke-width: 2.2px;
+      stroke-opacity: 0.7;
+    }
+
+    .transport-line.train {
+      stroke: var(--color-train);
+      stroke-width: 1.6px;
+      stroke-opacity: 0.6;
+    }
+
+    .transport-line.bus {
+      stroke: var(--color-bus);
+      stroke-width: 1.3px;
+      stroke-dasharray: 3, 3;
+      stroke-opacity: 0.55;
+    }
+
+    /* Vectores de Deformación y Nodos Fantasma */
+    .displacement-vector {
+      stroke: var(--color-ghost);
+      stroke-width: 1px;
+      stroke-dasharray: 2, 3;
+      stroke-opacity: 0.45;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .ghost-node {
+      fill: none;
+      stroke: var(--color-ghost);
+      stroke-width: 1.2px;
+      stroke-opacity: 0.6;
+    }
+
+    /* Nodos de Ciudades */
+    .city-node-group {
+      cursor: pointer;
+    }
+
+    .city-node-halo {
+      fill: transparent;
+      transition: fill 0.2s, r 0.2s;
+    }
+
+    .city-node-group:hover .city-node-halo {
+      fill: rgba(56, 189, 248, 0.25);
+    }
+
+    .city-node-core {
+      transition: r 0.2s, fill 0.2s;
+    }
+
+    .city-node-group:hover .city-node-core {
+      r: 7;
+      stroke: #fff;
+      stroke-width: 2;
+    }
+
+    .city-label-text {
+      font-family: var(--font-ui);
+      font-size: 11px;
+      font-weight: 600;
+      fill: #e2e8f0;
+      pointer-events: none;
+      user-select: none;
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.9));
+      transition: fill 0.2s;
+    }
+
+    .city-time-text {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 500;
+      fill: #94a3b8;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .city-node-group:hover .city-label-text {
+      fill: #38bdf8;
+    }
+
+    /* Nodo Origen Especial */
+    .origin-pulse-wave {
+      fill: none;
+      stroke: #a855f7;
+      stroke-width: 1.5px;
+      opacity: 0.8;
+      animation: originWave 3s infinite cubic-bezier(0.2, 0.8, 0.4, 1);
+    }
+
+    @keyframes originWave {
+      0% { r: 10px; opacity: 0.9; }
+      100% { r: 70px; opacity: 0; }
+    }
+
+    /* Tooltip Flotante de Alta Precisión */
+    #infotooltip {
+      position: absolute;
+      display: none;
+      background: rgba(11, 18, 33, 0.94);
+      backdrop-filter: blur(16px);
+      border: 1px solid #38bdf8;
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: #fff;
+      font-size: 0.82rem;
+      pointer-events: none;
+      z-index: 1000;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 15px rgba(56, 189, 248, 0.3);
+      min-width: 250px;
+      max-width: 320px;
+      transform: translate(-50%, -115%);
+      transition: opacity 0.15s ease-out;
+    }
+
+    .tooltip-city-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+    }
+
+    .tooltip-badge {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 12px;
+      text-transform: uppercase;
+    }
+
+    .tooltip-badge.hspeed { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; }
+    .tooltip-badge.train { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #38bdf8; }
+    .tooltip-badge.bus { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid #f59e0b; }
+
+    .tooltip-stat-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      font-size: 0.78rem;
+    }
+
+    .tooltip-stat-label { color: var(--text-muted); }
+    .tooltip-stat-value { font-family: var(--font-mono); font-weight: 600; color: #f8fafc; }
+
+    .tooltip-route {
+      margin-top: 8px;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.1);
+      font-size: 0.72rem;
+      color: #cbd5e1;
+    }
+
+    .tooltip-route strong { color: #38bdf8; }
+
+    /* Footer Info */
+    footer {
+      padding: 12px 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.76rem;
+      color: var(--text-dim);
+      background: rgba(7, 11, 20, 0.9);
+    }
+
+    footer a { color: #38bdf8; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <circle cx="12" cy="12" r="6"></circle>
+          <circle cx="12" cy="12" r="2"></circle>
+          <line x1="12" y1="2" x2="12" y2="22"></line>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+        </svg>
+      </div>
+      <div class="brand-title">
+        <h1>ANAMORFOSIS TEMPORAL DE ESPAÑA</h1>
+        <p>Cartograma de isócronas relativas sobre red de transporte público terrestre (47 capitales peninsulares)</p>
+      </div>
+    </div>
+    <div class="header-badge">
+      <span>ALTA VELOCIDAD & DIJKSTRA MULTIMODAL</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- BARRA LATERAL: Selector, Métricas, Filtros, Leyenda -->
+    <aside class="sidebar">
+      <!-- Selector de Origen -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 21s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 7.2c0 7.3-8 11.8-8 11.8z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            Punto de Origen (0h, 0km)
+          </span>
+        </div>
+        <div class="origin-selector-group">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="city-search" placeholder="Buscar capital de provincia..." autocomplete="off">
+            <div id="autocomplete-list" class="autocomplete-list"></div>
+          </div>
+          <div class="quick-origins" id="quick-origins">
+            <!-- Chips automáticos de capitales clave -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Telemetría y Métricas en Tiempo Real -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+            Telemetría de Accesibilidad
+          </span>
+        </div>
+        <div class="metrics-grid">
+          <!-- Métrica 1: Accesibilidad < 3h (Población + Capitales) -->
+          <div class="metric-card full-width">
+            <div class="metric-header-row">
+              <span class="metric-label">Accesibles &lt; 3 Horas</span>
+              <span class="metric-val hspeed" id="metric-pop-under-3h">--%</span>
+            </div>
+            <div class="demographic-bar-bg">
+              <div class="demographic-bar-fill" id="metric-pop-bar"></div>
+            </div>
+            <div class="metric-dual-sub">
+              <span>👥 <strong id="metric-pop-abs">-- M</strong> de 44.6M hab.</span>
+              <span>🏛️ <strong id="metric-under-3h-count">--/46</strong> (<span id="metric-under-3h">--%</span> cap.)</span>
+            </div>
+          </div>
+
+          <!-- Métrica 2: Tiempos Centrales (Media vs. Medianas) -->
+          <div class="metric-card full-width">
+            <span class="metric-label">Tiempos Centrales de Viaje</span>
+            <div class="central-times-row">
+              <div class="time-item" title="Media aritmética del tiempo a las 46 capitales">
+                <span class="time-sublabel">Media</span>
+                <span class="time-val" id="metric-avg-time">--h --m</span>
+                <span class="time-subdesc">Capitales</span>
+              </div>
+              <div class="time-item" title="Tiempo al 50% de las capitales peninsulares">
+                <span class="time-sublabel">Mediana</span>
+                <span class="time-val accent" id="metric-median-cap-time">--h --m</span>
+                <span class="time-subdesc">Capitales</span>
+              </div>
+              <div class="time-item" title="Tiempo al 50% de la población española peninsular">
+                <span class="time-sublabel">Mediana</span>
+                <span class="time-val hspeed" id="metric-median-pop-time">--h --m</span>
+                <span class="time-subdesc">Población</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Métrica 3: Más Rápido -->
+          <div class="metric-card">
+            <span class="metric-label">Enlace Más Rápido</span>
+            <span class="metric-val" id="metric-fastest-city" style="font-size: 0.95rem;">--</span>
+            <span class="metric-sub" id="metric-fastest-time">--</span>
+          </div>
+
+          <!-- Métrica 4: Más Remoto -->
+          <div class="metric-card">
+            <span class="metric-label">Enlace Más Remoto</span>
+            <span class="metric-val warning" id="metric-slowest-city" style="font-size: 0.95rem;">--</span>
+            <span class="metric-sub" id="metric-slowest-time">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controles de Capas y Visualización -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            Capas y Filtros
+          </span>
+        </div>
+        <div class="filter-list">
+          <label class="filter-item">
+            <span>Anillos concéntricos isócronos (1h - 10h+)</span>
+            <div class="toggle-switch">
+              <input type="checkbox" id="toggle-rings" checked>
+              <span class="toggle-slider"></span>
+            </div>
+          </label>
+          <label class="filter-item">
+            <span>Silueta deformada (Hull peninsular)</span>
+            <div class="toggle-switch">
+              <input type="checkbox" id="toggle-hull" checked>
+              <span class="toggle-slider"></span>
+            </div>
+          </label>
+          <label class="filter-item">
+            <span>Líneas radiales por modo de transporte</span>
+            <div class="toggle-switch">
+              <input type="checkbox" id="toggle-lines" checked>
+              <span class="toggle-slider"></span>
+            </div>
+          </label>
+          <label class="filter-item">
+            <span>Deformación vs. Posición geográfica</span>
+            <div class="toggle-switch">
+              <input type="checkbox" id="toggle-ghost" checked>
+              <span class="toggle-slider"></span>
+            </div>
+          </label>
+          <label class="filter-item">
+            <span>Etiquetas y tiempos en el mapa</span>
+            <div class="toggle-switch">
+              <input type="checkbox" id="toggle-labels" checked>
+              <span class="toggle-slider"></span>
+            </div>
+          </label>
+        </div>
+
+        <div class="scale-control">
+          <div class="scale-header">
+            <span>Escala radial: <strong id="scale-value">38 px/h</strong></span>
+            <span>Rango [25 - 65 px]</span>
+          </div>
+          <input type="range" min="25" max="65" value="38" class="scale-slider" id="scale-slider">
+        </div>
+      </div>
+
+      <!-- Leyenda Visual Estricta -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+            </svg>
+            Modo de Transporte
+          </span>
+        </div>
+        <div class="legend-list">
+          <div class="legend-item">
+            <div class="legend-symbol"><div class="legend-line-hspeed"></div></div>
+            <div class="legend-label">
+              <strong>Alta Velocidad (AVE / Avlo / Iryo / Avant)</strong>
+              <span>Línea continua verde brillante. Colapso espacio-temporal.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-symbol"><div class="legend-line-train"></div></div>
+            <div class="legend-label">
+              <strong>Tren convencional (Media Distancia / Alvia)</strong>
+              <span>Línea continua media azul cian.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-symbol"><div class="legend-line-bus"></div></div>
+            <div class="legend-label">
+              <strong>Autobús de línea / Sin tren directo</strong>
+              <span>Línea punteada ámbar. Penalización periférica.</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-symbol"><div class="legend-line-ghost"></div></div>
+            <div class="legend-label">
+              <strong>Posición Geográfica Real (Fantasma)</strong>
+              <span>Círculo tenue y vector gris de desplazamiento relativo.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ÁREA DEL MAPA SVG Y HUD -->
+    <section class="canvas-wrapper" id="canvas-wrapper">
+      <div class="canvas-hud-top">
+        <div class="hud-title-badge">
+          <h2>Origen: <span class="origin-tag" id="hud-origin-name">Málaga</span></h2>
+          <p id="hud-origin-detail">Andalucía • (0,0) Centro Polar • Rumbo Geográfico Fijo</p>
+        </div>
+        <div class="viewport-controls">
+          <button class="viewport-btn" id="btn-zoom-in" title="Acercar">+</button>
+          <button class="viewport-btn" id="btn-zoom-out" title="Alejar">−</button>
+          <button class="viewport-btn" id="btn-zoom-reset" title="Restablecer vista">⟲</button>
+        </div>
+      </div>
+
+      <svg id="svg-canvas" viewBox="0 0 1050 920">
+        <defs>
+          <radialGradient id="center-glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.25"/>
+            <stop offset="40%" stop-color="#0284c7" stop-opacity="0.08"/>
+            <stop offset="100%" stop-color="#070b14" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="origin-halo" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#a855f7" stop-opacity="0.6"/>
+            <stop offset="100%" stop-color="#a855f7" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="glow-filter" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+
+        <!-- Contenedor general que soporta Panning y Zooming -->
+        <g id="viewport-group" transform="translate(525, 460) scale(1)">
+          <!-- Capa de Halo de Fondo -->
+          <circle id="bg-halo-circle" cx="0" cy="0" r="380" fill="url(#center-glow)"></circle>
+
+          <!-- Ejes Cardinales Geográficos (N, S, E, O) -->
+          <g id="cardinal-layer"></g>
+
+          <!-- Anillos Concéntricos Isócronos -->
+          <g id="rings-layer"></g>
+
+          <!-- Silueta Deformada Interpolada (Hull Peninsular) -->
+          <path id="deformed-hull" class="hull-path" d="" />
+
+          <!-- Vectores de Deformación y Puntos Fantasma Geográficos -->
+          <g id="ghost-layer"></g>
+
+          <!-- Rayos de Conexión de Transporte -->
+          <g id="lines-layer"></g>
+
+          <!-- Nodos de las Capitales -->
+          <g id="nodes-layer"></g>
+
+          <!-- Capa de Nodo de Origen Central -->
+          <g id="origin-layer"></g>
+        </g>
+      </svg>
+
+      <!-- Tooltip Flotante de Precisión -->
+      <div id="infotooltip">
+        <div class="tooltip-city-name">
+          <span id="tt-name">Ciudad</span>
+          <span class="tooltip-badge hspeed" id="tt-badge">AVE</span>
+        </div>
+        <div class="tooltip-stat-row">
+          <span class="tooltip-stat-label">Tiempo de viaje:</span>
+          <span class="tooltip-stat-value" id="tt-time">0h 00m</span>
+        </div>
+        <div class="tooltip-stat-row">
+          <span class="tooltip-stat-label">Distancia física real:</span>
+          <span class="tooltip-stat-value" id="tt-dist">0 km</span>
+        </div>
+        <div class="tooltip-stat-row">
+          <span class="tooltip-stat-label">Velocidad efectiva:</span>
+          <span class="tooltip-stat-value" id="tt-speed">0 km/h</span>
+        </div>
+        <div class="tooltip-stat-row">
+          <span class="tooltip-stat-label">Efecto anamórfico:</span>
+          <span class="tooltip-stat-value" id="tt-effect">Contracción (-0%)</span>
+        </div>
+        <div class="tooltip-route" id="tt-route">
+          <strong>Ruta óptima:</strong> Origen → Destino
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div>Cartograma Polar de Isócronas Relativas de España • Infraestructura Ferroviaria y Terrestre</div>
+    <div>Todas las 47 capitales peninsulares modeladas con cálculo de caminos mínimos Dijkstra</div>
+  </footer>
+
+  <script>
+    /* ==========================================================================
+       1. DATASET EXHAUSTIVO: 47 CAPITALES PENINSULARES DE ESPAÑA
+       ========================================================================== */
+    const CITIES = {
+      madrid:       { name: "Madrid", prov: "Madrid", cc: "Comunidad de Madrid", lat: 40.4168, lon: -3.7038, pop: 7000000 },
+      barcelona:    { name: "Barcelona", prov: "Barcelona", cc: "Cataluña", lat: 41.3851, lon: 2.1734, pop: 5810000 },
+      valencia:     { name: "Valencia", prov: "Valencia", cc: "Comunitat Valenciana", lat: 39.4699, lon: -0.3763, pop: 2630000 },
+      sevilla:      { name: "Sevilla", prov: "Sevilla", cc: "Andalucía", lat: 37.3891, lon: -5.9845, pop: 1960000 },
+      zaragoza:     { name: "Zaragoza", prov: "Zaragoza", cc: "Aragón", lat: 41.6488, lon: -0.8891, pop: 975000 },
+      malaga:       { name: "Málaga", prov: "Málaga", cc: "Andalucía", lat: 36.7213, lon: -4.4214, pop: 1755000 },
+      murcia:       { name: "Murcia", prov: "Murcia", cc: "Región de Murcia", lat: 37.9922, lon: -1.1307, pop: 1555000 },
+      bilbao:       { name: "Bilbao", prov: "Bizkaia", cc: "País Vasco", lat: 43.2630, lon: -2.9350, pop: 1155000 },
+      alicante:     { name: "Alicante", prov: "Alicante", cc: "Comunitat Valenciana", lat: 38.3452, lon: -0.4810, pop: 1950000 },
+      cordoba:      { name: "Córdoba", prov: "Córdoba", cc: "Andalucía", lat: 37.8882, lon: -4.7794, pop: 775000 },
+      valladolid:   { name: "Valladolid", prov: "Valladolid", cc: "Castilla y León", lat: 41.6523, lon: -4.7245, pop: 520000 },
+      vitoria:      { name: "Vitoria-Gasteiz", prov: "Álava", cc: "País Vasco", lat: 42.8467, lon: -2.6716, pop: 335000 },
+      coruna:       { name: "A Coruña", prov: "A Coruña", cc: "Galicia", lat: 43.3623, lon: -8.4115, pop: 1125000 },
+      granada:      { name: "Granada", prov: "Granada", cc: "Andalucía", lat: 37.1773, lon: -3.5986, pop: 935000 },
+      oviedo:       { name: "Oviedo", prov: "Asturias", cc: "Principado de Asturias", lat: 43.3619, lon: -5.8494, pop: 1005000 },
+      santander:    { name: "Santander", prov: "Cantabria", cc: "Cantabria", lat: 43.4623, lon: -3.8099, pop: 590000 },
+      pamplona:     { name: "Pamplona", prov: "Navarra", cc: "Navarra", lat: 42.8125, lon: -1.6458, pop: 675000 },
+      almeria:      { name: "Almería", prov: "Almería", cc: "Andalucía", lat: 36.8381, lon: -2.4597, pop: 755000 },
+      sansebastian: { name: "San Sebastián", prov: "Gipuzkoa", cc: "País Vasco", lat: 43.3183, lon: -1.9812, pop: 730000 },
+      burgos:       { name: "Burgos", prov: "Burgos", cc: "Castilla y León", lat: 42.3440, lon: -3.6969, pop: 355000 },
+      albacete:     { name: "Albacete", prov: "Albacete", cc: "Castilla-La Mancha", lat: 38.9943, lon: -1.8585, pop: 390000 },
+      salamanca:    { name: "Salamanca", prov: "Salamanca", cc: "Castilla y León", lat: 40.9701, lon: -5.6635, pop: 325000 },
+      huelva:       { name: "Huelva", prov: "Huelva", cc: "Andalucía", lat: 37.2614, lon: -6.9447, pop: 535000 },
+      logrono:      { name: "Logroño", prov: "La Rioja", cc: "La Rioja", lat: 42.4658, lon: -2.4499, pop: 325000 },
+      badajoz:      { name: "Badajoz", prov: "Badajoz", cc: "Extremadura", lat: 38.8794, lon: -6.9706, pop: 665000 },
+      leon:         { name: "León", prov: "León", cc: "Castilla y León", lat: 42.5987, lon: -5.5671, pop: 445000 },
+      cadiz:        { name: "Cádiz", prov: "Cádiz", cc: "Andalucía", lat: 36.5271, lon: -6.2886, pop: 1250000 },
+      tarragona:    { name: "Tarragona", prov: "Tarragona", cc: "Cataluña", lat: 41.1189, lon: 1.2445, pop: 850000 },
+      lleida:       { name: "Lleida", prov: "Lleida", cc: "Cataluña", lat: 41.6176, lon: 0.6200, pop: 450000 },
+      jaen:         { name: "Jaén", prov: "Jaén", cc: "Andalucía", lat: 37.7796, lon: -3.7849, pop: 620000 },
+      ourense:      { name: "Ourense", prov: "Ourense", cc: "Galicia", lat: 42.3358, lon: -7.8639, pop: 305000 },
+      girona:       { name: "Girona", prov: "Girona", cc: "Cataluña", lat: 41.9794, lon: 2.8214, pop: 815000 },
+      lugo:         { name: "Lugo", prov: "Lugo", cc: "Galicia", lat: 43.0097, lon: -7.5560, pop: 325000 },
+      caceres:      { name: "Cáceres", prov: "Cáceres", cc: "Extremadura", lat: 39.4753, lon: -6.3722, pop: 385000 },
+      guadalajara:  { name: "Guadalajara", prov: "Guadalajara", cc: "Castilla-La Mancha", lat: 40.6327, lon: -3.1669, pop: 275000 },
+      toledo:       { name: "Toledo", prov: "Toledo", cc: "Castilla-La Mancha", lat: 39.8628, lon: -4.0273, pop: 735000 },
+      pontevedra:   { name: "Pontevedra", prov: "Pontevedra", cc: "Galicia", lat: 42.4336, lon: -8.6479, pop: 945000 },
+      palencia:     { name: "Palencia", prov: "Palencia", cc: "Castilla y León", lat: 42.0096, lon: -4.5288, pop: 155000 },
+      ciudadreal:   { name: "Ciudad Real", prov: "Ciudad Real", cc: "Castilla-La Mancha", lat: 38.9848, lon: -3.9274, pop: 490000 },
+      zamora:       { name: "Zamora", prov: "Zamora", cc: "Castilla y León", lat: 41.5033, lon: -5.7445, pop: 165000 },
+      castellon:    { name: "Castellón de la Plana", prov: "Castellón", cc: "Comunitat Valenciana", lat: 39.9864, lon: -0.0513, pop: 605000 },
+      cuenca:       { name: "Cuenca", prov: "Cuenca", cc: "Castilla-La Mancha", lat: 40.0704, lon: -2.1374, pop: 195000 },
+      segovia:      { name: "Segovia", prov: "Segovia", cc: "Castilla y León", lat: 40.9429, lon: -4.1088, pop: 155000 },
+      huesca:       { name: "Huesca", prov: "Huesca", cc: "Aragón", lat: 42.1362, lon: -0.4087, pop: 225000 },
+      soria:        { name: "Soria", prov: "Soria", cc: "Castilla y León", lat: 41.7666, lon: -2.4790, pop: 90000 },
+      teruel:       { name: "Teruel", prov: "Teruel", cc: "Aragón", lat: 40.3456, lon: -1.1072, pop: 135000 },
+      avila:        { name: "Ávila", prov: "Ávila", cc: "Castilla y León", lat: 40.6567, lon: -4.6812, pop: 158000 }
+    };
+
+    /* Perímetro ordenado para trazar la silueta exterior (deformed hull) de España */
+    const PERIMETER_CITIES = [
+      "huelva", "cadiz", "malaga", "almeria", "murcia", "alicante", "valencia", 
+      "castellon", "tarragona", "barcelona", "girona", "huesca", "pamplona", 
+      "sansebastian", "bilbao", "santander", "oviedo", "lugo", "coruna", 
+      "pontevedra", "ourense", "zamora", "salamanca", "caceres", "badajoz"
+    ];
+
+    /* ==========================================================================
+       2. GRAFO DE CORREDORES Y ALGORITMO DIJKSTRA
+       ========================================================================== */
+    const EDGES = [
+      // Corredor Madrid - Zaragoza - Barcelona - Girona (Alta Velocidad)
+      { from: "madrid", to: "guadalajara", time: 24, mode: "alta_velocidad", desc: "AVE / Alvia" },
+      { from: "guadalajara", to: "zaragoza", time: 55, mode: "alta_velocidad", desc: "AVE" },
+      { from: "madrid", to: "zaragoza", time: 75, mode: "alta_velocidad", desc: "AVE directo" },
+      { from: "zaragoza", to: "lleida", time: 44, mode: "alta_velocidad", desc: "AVE" },
+      { from: "lleida", to: "tarragona", time: 30, mode: "alta_velocidad", desc: "AVE" },
+      { from: "tarragona", to: "barcelona", time: 35, mode: "alta_velocidad", desc: "AVE" },
+      { from: "zaragoza", to: "barcelona", time: 90, mode: "alta_velocidad", desc: "AVE directo" },
+      { from: "madrid", to: "barcelona", time: 150, mode: "alta_velocidad", desc: "AVE directo" },
+      { from: "barcelona", to: "girona", time: 38, mode: "alta_velocidad", desc: "AVE / Avant" },
+      { from: "zaragoza", to: "huesca", time: 48, mode: "alta_velocidad", desc: "AVE / Alvia" },
+      { from: "lleida", to: "barcelona", time: 58, mode: "alta_velocidad", desc: "AVE" },
+
+      // Corredor Madrid - Levante (Alta Velocidad y Convencional)
+      { from: "madrid", to: "cuenca", time: 54, mode: "alta_velocidad", desc: "AVE" },
+      { from: "cuenca", to: "valencia", time: 52, mode: "alta_velocidad", desc: "AVE" },
+      { from: "madrid", to: "valencia", time: 110, mode: "alta_velocidad", desc: "AVE directo" },
+      { from: "cuenca", to: "albacete", time: 35, mode: "alta_velocidad", desc: "AVE" },
+      { from: "madrid", to: "albacete", time: 90, mode: "alta_velocidad", desc: "AVE directo" },
+      { from: "albacete", to: "alicante", time: 48, mode: "alta_velocidad", desc: "AVE" },
+      { from: "madrid", to: "alicante", time: 140, mode: "alta_velocidad", desc: "AVE directo" },
+      { from: "alicante", to: "murcia", time: 40, mode: "alta_velocidad", desc: "AVE / Avant" },
+      { from: "valencia", to: "castellon", time: 42, mode: "alta_velocidad", desc: "AVE / Euromed" },
+      { from: "castellon", to: "tarragona", time: 75, mode: "tren_convencional", desc: "Euromed / Talgo" },
+      { from: "valencia", to: "alicante", time: 85, mode: "tren_convencional", desc: "Euromed / Alvia" },
+      { from: "valencia", to: "barcelona", time: 180, mode: "tren_convencional", desc: "Euromed" },
+
+      // Corredor Madrid - Sur / Andalucía
+      { from: "madrid", to: "toledo", time: 33, mode: "alta_velocidad", desc: "Avant directo" },
+      { from: "madrid", to: "ciudadreal", time: 53, mode: "alta_velocidad", desc: "AVE" },
+      { from: "ciudadreal", to: "cordoba", time: 55, mode: "alta_velocidad", desc: "AVE" },
+      { from: "madrid", to: "cordoba", time: 108, mode: "alta_velocidad", desc: "AVE directo" },
+      { from: "cordoba", to: "sevilla", time: 45, mode: "alta_velocidad", desc: "AVE" },
+      { from: "madrid", to: "sevilla", time: 155, mode: "alta_velocidad", desc: "AVE directo" },
+      { from: "cordoba", to: "malaga", time: 50, mode: "alta_velocidad", desc: "AVE" },
+      { from: "madrid", to: "malaga", time: 165, mode: "alta_velocidad", desc: "AVE directo" },
+      { from: "cordoba", to: "granada", time: 90, mode: "alta_velocidad", desc: "AVE / Avant" },
+      { from: "malaga", to: "granada", time: 70, mode: "alta_velocidad", desc: "Avant directo" },
+      { from: "madrid", to: "granada", time: 205, mode: "alta_velocidad", desc: "AVE directo" },
+      { from: "sevilla", to: "malaga", time: 115, mode: "alta_velocidad", desc: "Avant directo" },
+      { from: "sevilla", to: "cadiz", time: 85, mode: "tren_convencional", desc: "Alvia / MD" },
+      { from: "sevilla", to: "huelva", time: 85, mode: "tren_convencional", desc: "Alvia / MD" },
+      { from: "cordoba", to: "jaen", time: 95, mode: "tren_convencional", desc: "MD" },
+      { from: "madrid", to: "jaen", time: 215, mode: "tren_convencional", desc: "MD directo" },
+      { from: "granada", to: "almeria", time: 155, mode: "tren_convencional", desc: "MD directo" },
+      { from: "malaga", to: "almeria", time: 200, mode: "autobus", desc: "ALSA directo costa" },
+      { from: "murcia", to: "almeria", time: 150, mode: "autobus", desc: "ALSA autovía" },
+      { from: "madrid", to: "almeria", time: 370, mode: "tren_convencional", desc: "Intercity" },
+      { from: "cadiz", to: "malaga", time: 235, mode: "autobus", desc: "Comes / Linesur" },
+      { from: "huelva", to: "cadiz", time: 175, mode: "autobus", desc: "Damas" },
+
+      // Corredor Madrid - Norte / Castilla y León / Cantábrico
+      { from: "madrid", to: "segovia", time: 27, mode: "alta_velocidad", desc: "Avant / AVE" },
+      { from: "segovia", to: "valladolid", time: 35, mode: "alta_velocidad", desc: "AVE / Alvia" },
+      { from: "madrid", to: "valladolid", time: 60, mode: "alta_velocidad", desc: "AVE directo" },
+      { from: "valladolid", to: "palencia", time: 20, mode: "alta_velocidad", desc: "AVE" },
+      { from: "palencia", to: "leon", time: 44, mode: "alta_velocidad", desc: "AVE" },
+      { from: "madrid", to: "leon", time: 125, mode: "alta_velocidad", desc: "AVE directo" },
+      { from: "leon", to: "oviedo", time: 60, mode: "alta_velocidad", desc: "AVE Pajares" },
+      { from: "valladolid", to: "burgos", time: 35, mode: "alta_velocidad", desc: "AVE" },
+      { from: "madrid", to: "burgos", time: 95, mode: "alta_velocidad", desc: "AVE directo" },
+      { from: "palencia", to: "santander", time: 130, mode: "tren_convencional", desc: "Alvia" },
+      { from: "madrid", to: "santander", time: 240, mode: "tren_convencional", desc: "Alvia directo" },
+      { from: "madrid", to: "oviedo", time: 190, mode: "alta_velocidad", desc: "AVE directo" },
+      { from: "oviedo", to: "santander", time: 160, mode: "autobus", desc: "ALSA" },
+      { from: "santander", to: "bilbao", time: 80, mode: "autobus", desc: "ALSA" },
+
+      // Corredor Noroeste / Galicia
+      { from: "madrid", to: "zamora", time: 65, mode: "alta_velocidad", desc: "Alvia / AVE" },
+      { from: "zamora", to: "ourense", time: 70, mode: "alta_velocidad", desc: "AVE Galicia" },
+      { from: "madrid", to: "ourense", time: 135, mode: "alta_velocidad", desc: "AVE directo" },
+      { from: "ourense", to: "coruna", time: 65, mode: "alta_velocidad", desc: "Avant / Alvia" },
+      { from: "ourense", to: "pontevedra", time: 75, mode: "tren_convencional", desc: "Alvia / MD" },
+      { from: "coruna", to: "pontevedra", time: 65, mode: "tren_convencional", desc: "MD Eje Atlántico" },
+      { from: "coruna", to: "lugo", time: 80, mode: "autobus", desc: "Arriva / Monbus" },
+      { from: "ourense", to: "lugo", time: 85, mode: "tren_convencional", desc: "MD" },
+      { from: "madrid", to: "coruna", time: 215, mode: "alta_velocidad", desc: "Alvia directo" },
+      { from: "madrid", to: "lugo", time: 280, mode: "tren_convencional", desc: "Alvia directo" },
+
+      // País Vasco, Navarra, La Rioja, Ebro
+      { from: "burgos", to: "vitoria", time: 45, mode: "tren_convencional", desc: "Alvia / MD" },
+      { from: "vitoria", to: "bilbao", time: 55, mode: "autobus", desc: "La Unión / ALSA" },
+      { from: "vitoria", to: "sansebastian", time: 85, mode: "tren_convencional", desc: "Alvia / MD" },
+      { from: "bilbao", to: "sansebastian", time: 70, mode: "autobus", desc: "Lurraldebus / ALSA" },
+      { from: "vitoria", to: "pamplona", time: 60, mode: "tren_convencional", desc: "Alvia" },
+      { from: "sansebastian", to: "pamplona", time: 60, mode: "autobus", desc: "ALSA / CONDA" },
+      { from: "pamplona", to: "zaragoza", time: 95, mode: "tren_convencional", desc: "Alvia / MD" },
+      { from: "pamplona", to: "logrono", time: 70, mode: "autobus", desc: "La Estellesa" },
+      { from: "logrono", to: "zaragoza", time: 110, mode: "tren_convencional", desc: "Alvia / MD" },
+      { from: "logrono", to: "burgos", time: 80, mode: "autobus", desc: "ALSA" },
+      { from: "logrono", to: "vitoria", time: 65, mode: "autobus", desc: "Cuadra / ALSA" },
+      { from: "madrid", to: "bilbao", time: 280, mode: "tren_convencional", desc: "Alvia directo" },
+      { from: "madrid", to: "sansebastian", time: 300, mode: "tren_convencional", desc: "Alvia directo" },
+      { from: "madrid", to: "pamplona", time: 185, mode: "tren_convencional", desc: "Alvia directo" },
+      { from: "madrid", to: "logrono", time: 200, mode: "tren_convencional", desc: "Alvia directo" },
+
+      // Extremadura y Castilla y León interior
+      { from: "madrid", to: "caceres", time: 180, mode: "tren_convencional", desc: "Alvia directo" },
+      { from: "caceres", to: "badajoz", time: 50, mode: "tren_convencional", desc: "Alvia / MD" },
+      { from: "madrid", to: "badajoz", time: 245, mode: "tren_convencional", desc: "Alvia directo" },
+      { from: "badajoz", to: "sevilla", time: 195, mode: "autobus", desc: "ALSA / LEDA" },
+      { from: "huelva", to: "badajoz", time: 210, mode: "autobus", desc: "Damas" },
+      { from: "madrid", to: "avila", time: 85, mode: "tren_convencional", desc: "MD" },
+      { from: "madrid", to: "salamanca", time: 95, mode: "tren_convencional", desc: "Alvia directo" },
+      { from: "avila", to: "salamanca", time: 55, mode: "tren_convencional", desc: "MD" },
+      { from: "avila", to: "valladolid", time: 75, mode: "tren_convencional", desc: "MD" },
+      { from: "salamanca", to: "zamora", time: 55, mode: "autobus", desc: "Avanza" },
+      { from: "valladolid", to: "zamora", time: 65, mode: "tren_convencional", desc: "MD / Bus" },
+      { from: "salamanca", to: "caceres", time: 135, mode: "autobus", desc: "ALSA Ruta de la Plata" },
+
+      // Transversales interiores (Teruel, Soria, Albacete-Murcia, etc.)
+      { from: "zaragoza", to: "teruel", time: 140, mode: "tren_convencional", desc: "MD" },
+      { from: "teruel", to: "valencia", time: 135, mode: "tren_convencional", desc: "MD" },
+      { from: "madrid", to: "teruel", time: 210, mode: "autobus", desc: "Samar / tren" },
+      { from: "madrid", to: "soria", time: 165, mode: "tren_convencional", desc: "MD" },
+      { from: "soria", to: "zaragoza", time: 135, mode: "autobus", desc: "ALSA" },
+      { from: "soria", to: "burgos", time: 110, mode: "autobus", desc: "ALSA" },
+      { from: "soria", to: "logrono", time: 85, mode: "autobus", desc: "ALSA" },
+      { from: "albacete", to: "murcia", time: 75, mode: "tren_convencional", desc: "MD / Alvia" },
+      { from: "ciudadreal", to: "toledo", time: 75, mode: "autobus", desc: "AISA" },
+      { from: "ciudadreal", to: "badajoz", time: 220, mode: "tren_convencional", desc: "MD" },
+      { from: "ciudadreal", to: "albacete", time: 120, mode: "autobus", desc: "AISA / tren" }
+    ];
+
+    // Construcción del grafo de adyacencia
+    const GRAPH = {};
+    Object.keys(CITIES).forEach(c => { GRAPH[c] = []; });
+    EDGES.forEach(e => {
+      GRAPH[e.from].push({ node: e.to, time: e.time, mode: e.mode, desc: e.desc });
+      GRAPH[e.to].push({ node: e.from, time: e.time, mode: e.mode, desc: e.desc });
+    });
+
+    const TRANSFER_PENALTY_MIN = 18; // Penalización realista en transbordos
+
+    function dijkstra(startNode) {
+      const dist = {};
+      const prev = {};
+      const pq = new Set(Object.keys(CITIES));
+
+      Object.keys(CITIES).forEach(c => {
+        dist[c] = Infinity;
+        prev[c] = null;
+      });
+      dist[startNode] = 0;
+
+      while (pq.size > 0) {
+        let u = null;
+        let minDist = Infinity;
+        for (const node of pq) {
+          if (dist[node] < minDist) {
+            minDist = dist[node];
+            u = node;
+          }
+        }
+        if (u === null || minDist === Infinity) break;
+        pq.delete(u);
+
+        for (const edge of GRAPH[u]) {
+          const v = edge.node;
+          if (!pq.has(v)) continue;
+          const penalty = (u === startNode) ? 0 : TRANSFER_PENALTY_MIN;
+          const alt = dist[u] + edge.time + penalty;
+          if (alt < dist[v]) {
+            dist[v] = alt;
+            prev[v] = { from: u, edge };
+          }
+        }
+      }
+
+      const results = {};
+      Object.keys(CITIES).forEach(c => {
+        if (c === startNode) {
+          results[c] = { time: 0, path: [c], modes: [], dominantMode: 'origen' };
+          return;
+        }
+        const path = [];
+        const modes = [];
+        let curr = c;
+        while (curr && prev[curr]) {
+          path.unshift(curr);
+          modes.unshift(prev[curr].edge.mode);
+          curr = prev[curr].from;
+        }
+        if (curr) path.unshift(curr);
+
+        let avCount = modes.filter(m => m === 'alta_velocidad').length;
+        let tcCount = modes.filter(m => m === 'tren_convencional').length;
+        let busCount = modes.filter(m => m === 'autobus').length;
+        let dominant = 'autobus';
+        if (avCount > 0 && avCount >= tcCount && avCount >= busCount) dominant = 'alta_velocidad';
+        else if (tcCount > 0 && tcCount >= busCount) dominant = 'tren_convencional';
+
+        results[c] = {
+          time: dist[c],
+          path,
+          modes,
+          dominantMode: dominant
+        };
+      });
+      return results;
+    }
+
+    /* ==========================================================================
+       3. FÓRMULAS GEOGRÁFICAS Y PROYECCIÓN POLAR ANAMÓRFICA
+       ========================================================================== */
+    function haversineDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    /* Generador de spline cúbico cerrado Catmull-Rom para el Hull deformado */
+    function catmullRomSpline(points) {
+      const n = points.length;
+      if (n < 3) return '';
+      let d = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+      for (let i = 0; i < n; i++) {
+        const p0 = points[(i - 1 + n) % n];
+        const p1 = points[i];
+        const p2 = points[(i + 1) % n];
+        const p3 = points[(i + 2) % n];
+        const cp1x = p1.x + (p2.x - p0.x) / 6;
+        const cp1y = p1.y + (p2.y - p0.y) / 6;
+        const cp2x = p2.x - (p3.x - p1.x) / 6;
+        const cp2y = p2.y - (p3.y - p1.y) / 6;
+        d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+      }
+      return d + ' Z';
+    }
+
+    /* ==========================================================================
+       4. ESTADO DE LA APLICACIÓN Y MOTOR DE ANIMACIÓN
+       ========================================================================== */
+    let currentOrigin = 'malaga';
+    let pxPerHour = 38;
+    let zoomLevel = 1;
+    let panX = 525;
+    let panY = 460;
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+
+    // Estado interpolado de animación
+    let animationFrameId = null;
+    let animStartTime = null;
+    const ANIMATION_DURATION = 750; // ms
+
+    let currentPositions = {}; // id -> { x, y, r, angle, hours, ghostX, ghostY }
+    let targetPositions = {};
+    let initialPositions = {};
+
+    /* Capas DOM del SVG */
+    const ringsLayer = document.getElementById('rings-layer');
+    const cardinalLayer = document.getElementById('cardinal-layer');
+    const linesLayer = document.getElementById('lines-layer');
+    const ghostLayer = document.getElementById('ghost-layer');
+    const nodesLayer = document.getElementById('nodes-layer');
+    const originLayer = document.getElementById('origin-layer');
+    const hullPath = document.getElementById('deformed-hull');
+    const viewportGroup = document.getElementById('viewport-group');
+    const tooltip = document.getElementById('infotooltip');
+    const bgHaloCircle = document.getElementById('bg-halo-circle');
+
+    /* Toggles */
+    const toggleRings = document.getElementById('toggle-rings');
+    const toggleHull = document.getElementById('toggle-hull');
+    const toggleLines = document.getElementById('toggle-lines');
+    const toggleGhost = document.getElementById('toggle-ghost');
+    const toggleLabels = document.getElementById('toggle-labels');
+    const scaleSlider = document.getElementById('scale-slider');
+    const scaleValueLabel = document.getElementById('scale-value');
+
+    /* ==========================================================================
+       5. CÁLCULO DE POSICIONES ANAMÓRFICAS
+       ========================================================================== */
+    function computeAnamorphicPositions(origId, scale) {
+      const orig = CITIES[origId];
+      const routing = dijkstra(origId);
+      const positions = {};
+
+      // Referencia para la distancia geográfica fantasma: 100 km/h estándar
+      const V_REF = 100;
+
+      Object.keys(CITIES).forEach(id => {
+        if (id === origId) {
+          positions[id] = {
+            id,
+            x: 0,
+            y: 0,
+            r: 0,
+            angle: 0,
+            hours: 0,
+            distKm: 0,
+            ghostX: 0,
+            ghostY: 0,
+            ghostR: 0,
+            routing: routing[id]
+          };
+          return;
+        }
+
+        const dest = CITIES[id];
+        const distKm = haversineDistance(orig.lat, orig.lon, dest.lat, dest.lon);
+        const route = routing[id];
+        const hours = route.time / 60;
+
+        // Dirección cardinal real (proyección equirectangular local)
+        const meanLat = (orig.lat + dest.lat) / 2 * Math.PI / 180;
+        const dx = (dest.lon - orig.lon) * Math.cos(meanLat);
+        const dy = dest.lat - orig.lat;
+        const angle = Math.atan2(dy, dx);
+
+        // En pantalla SVG: el eje Y crece hacia abajo, por lo que Norte (dy > 0) es -sin(angle)
+        const r = hours * scale;
+        const posX = Math.cos(angle) * r;
+        const posY = -Math.sin(angle) * r;
+
+        // Posición fantasma geográfica (proporcional a km a 100 km/h de referencia)
+        const ghostHours = distKm / V_REF;
+        const ghostR = ghostHours * scale;
+        const ghostX = Math.cos(angle) * ghostR;
+        const ghostY = -Math.sin(angle) * ghostR;
+
+        positions[id] = {
+          id,
+          x: posX,
+          y: posY,
+          r,
+          angle,
+          hours,
+          distKm,
+          ghostX,
+          ghostY,
+          ghostR,
+          routing: route
+        };
+      });
+
+      return positions;
+    }
+
+    /* ==========================================================================
+       6. RENDERIZADO VISUAL
+       ========================================================================== */
+    function renderStaticLayers() {
+      // 1. Ejes Cardinales
+      cardinalLayer.innerHTML = '';
+      const maxAxisR = 12 * pxPerHour;
+      cardinalLayer.innerHTML = `
+        <line x1="0" y1="${-maxAxisR}" x2="0" y2="${maxAxisR}" class="cardinal-axis"/>
+        <line x1="${-maxAxisR}" y1="0" x2="${maxAxisR}" y2="0" class="cardinal-axis"/>
+        <text x="0" y="${-maxAxisR - 14}" class="cardinal-label north">NORTE (N)</text>
+        <text x="0" y="${maxAxisR + 18}" class="cardinal-label">SUR (S)</text>
+        <text x="${maxAxisR + 18}" y="0" class="cardinal-label">ESTE (E)</text>
+        <text x="${-maxAxisR - 18}" y="0" class="cardinal-label">OESTE (O)</text>
+      `;
+
+      // 2. Anillos Isócronos
+      ringsLayer.innerHTML = '';
+      const ringHours = [1, 2, 3, 4, 5, 6, 8, 10, 12];
+      bgHaloCircle.setAttribute('r', Math.max(380, 8 * pxPerHour));
+
+      ringHours.forEach(h => {
+        const r = h * pxPerHour;
+        const isKey = (h === 2 || h === 4 || h === 8);
+        ringsLayer.innerHTML += `
+          <circle cx="0" cy="0" r="${r}" class="isochrone-ring ${isKey ? 'key-ring' : ''}"/>
+          <text x="${r}" y="-6" class="isochrone-ring-label">${h}h</text>
+          <text x="${-r}" y="-6" class="isochrone-ring-label">${h}h</text>
+        `;
+      });
+      ringsLayer.style.display = toggleRings.checked ? 'block' : 'none';
+    }
+
+    function renderDynamicLayers(pts) {
+      // 1. Silueta Deformada (Hull)
+      if (toggleHull.checked) {
+        const hullPoints = PERIMETER_CITIES.map(cid => ({
+          x: pts[cid].x,
+          y: pts[cid].y
+        }));
+        hullPath.setAttribute('d', catmullRomSpline(hullPoints));
+        hullPath.style.display = 'block';
+      } else {
+        hullPath.style.display = 'none';
+      }
+
+      // 2. Vectores de Deformación y Fantasmas Geográficos
+      ghostLayer.innerHTML = '';
+      if (toggleGhost.checked) {
+        Object.keys(pts).forEach(id => {
+          if (id === currentOrigin) return;
+          const p = pts[id];
+          ghostLayer.innerHTML += `
+            <line x1="${p.ghostX}" y1="${p.ghostY}" x2="${p.x}" y2="${p.y}" class="displacement-vector" />
+            <circle cx="${p.ghostX}" cy="${p.ghostY}" r="2.5" class="ghost-node" />
+          `;
+        });
+      }
+
+      // 3. Líneas Radiales de Transporte
+      linesLayer.innerHTML = '';
+      if (toggleLines.checked) {
+        Object.keys(pts).forEach(id => {
+          if (id === currentOrigin) return;
+          const p = pts[id];
+          const mode = p.routing.dominantMode;
+          const modeClass = mode === 'alta_velocidad' ? 'hspeed' : (mode === 'tren_convencional' ? 'train' : 'bus');
+
+          linesLayer.innerHTML += `
+            <line x1="0" y1="0" x2="${p.x}" y2="${p.y}" class="transport-line ${modeClass}" />
+          `;
+        });
+      }
+
+      // 4. Nodos de Capitales y Etiquetas
+      nodesLayer.innerHTML = '';
+      const showLabels = toggleLabels.checked;
+
+      Object.keys(pts).forEach(id => {
+        if (id === currentOrigin) return;
+        const p = pts[id];
+        const mode = p.routing.dominantMode;
+        const isFast = mode === 'alta_velocidad';
+        const color = isFast ? 'var(--color-hspeed)' : (mode === 'tren_convencional' ? 'var(--color-train)' : 'var(--color-bus)');
+        const glowColor = isFast ? 'var(--color-hspeed-glow)' : (mode === 'tren_convencional' ? 'var(--color-train-glow)' : 'var(--color-bus-glow)');
+        
+        // Calcular horas y minutos
+        const totalMin = Math.round(p.hours * 60);
+        const hh = Math.floor(totalMin / 60);
+        const mm = totalMin % 60;
+        const timeStr = `${hh}h ${mm > 0 ? (mm < 10 ? '0' : '') + mm + 'm' : ''}`;
+
+        // Posición de etiqueta según cuadrante para evitar solapar el centro
+        const labelOffsetX = p.x >= 0 ? 9 : -9;
+        const labelAnchor = p.x >= 0 ? 'start' : 'end';
+
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('class', 'city-node-group');
+        g.setAttribute('data-id', id);
+
+        g.innerHTML = `
+          <circle cx="${p.x}" cy="${p.y}" r="12" class="city-node-halo"/>
+          <circle cx="${p.x}" cy="${p.y}" r="4.5" fill="${color}" stroke="#070b14" stroke-width="1.2" class="city-node-core" style="filter: drop-shadow(0 0 6px ${glowColor});"/>
+          ${showLabels ? `
+            <text x="${p.x + labelOffsetX}" y="${p.y - 3}" class="city-label-text" text-anchor="${labelAnchor}">
+              ${CITIES[id].name}
+            </text>
+            <text x="${p.x + labelOffsetX}" y="${p.y + 9}" class="city-time-text" text-anchor="${labelAnchor}">
+              ${timeStr}
+            </text>
+          ` : ''}
+        `;
+
+        // Eventos Hover para Tooltip
+        g.addEventListener('mouseenter', (e) => showTooltip(id, p, e));
+        g.addEventListener('mousemove', (e) => updateTooltipPosition(e));
+        g.addEventListener('mouseleave', hideTooltip);
+
+        // Clic para cambiar origen
+        g.addEventListener('click', () => setOrigin(id));
+
+        nodesLayer.appendChild(g);
+      });
+
+      // 5. Nodo Origen Central
+      originLayer.innerHTML = `
+        <circle cx="0" cy="0" r="28" class="origin-pulse-wave"/>
+        <circle cx="0" cy="0" r="16" class="origin-pulse-wave" style="animation-delay: 1.5s;"/>
+        <circle cx="0" cy="0" r="8.5" fill="#a855f7" stroke="#fff" stroke-width="2" style="filter: drop-shadow(0 0 12px #a855f7);"/>
+        <circle cx="0" cy="0" r="3" fill="#fff"/>
+        <text x="0" y="24" class="city-label-text" text-anchor="middle" style="fill: #a855f7; font-weight: 800; font-size: 12px;">
+          ${CITIES[currentOrigin].name} (ORIGEN 0h)
+        </text>
+      `;
+    }
+
+    /* ==========================================================================
+       7. ANIMACIÓN INTERPOLADA POLAR (r, theta)
+       ========================================================================== */
+    function easeOutCubic(x) {
+      return 1 - Math.pow(1 - x, 3);
+    }
+
+    function animateTransition() {
+      if (animStartTime === null) animStartTime = performance.now();
+      const now = performance.now();
+      const progress = Math.min(1, (now - animStartTime) / ANIMATION_DURATION);
+      const ease = easeOutCubic(progress);
+
+      const interpolated = {};
+      Object.keys(CITIES).forEach(id => {
+        const init = initialPositions[id] || targetPositions[id];
+        const targ = targetPositions[id];
+
+        // Interpolación cartesiana suave
+        const curX = init.x + (targ.x - init.x) * ease;
+        const curY = init.y + (targ.y - init.y) * ease;
+        const curGhostX = init.ghostX + (targ.ghostX - init.ghostX) * ease;
+        const curGhostY = init.ghostY + (targ.ghostY - init.ghostY) * ease;
+
+        interpolated[id] = {
+          ...targ,
+          x: curX,
+          y: curY,
+          ghostX: curGhostX,
+          ghostY: curGhostY
+        };
+      });
+
+      currentPositions = interpolated;
+      renderDynamicLayers(interpolated);
+
+      if (progress < 1) {
+        animationFrameId = requestAnimationFrame(animateTransition);
+      } else {
+        currentPositions = targetPositions;
+        animStartTime = null;
+      }
+    }
+
+    function setOrigin(newOriginId) {
+      if (newOriginId === currentOrigin && Object.keys(currentPositions).length > 0) return;
+
+      currentOrigin = newOriginId;
+      document.getElementById('hud-origin-name').textContent = CITIES[newOriginId].name;
+      document.getElementById('hud-origin-detail').textContent = `${CITIES[newOriginId].prov} (${CITIES[newOriginId].cc}) • (0,0) Centro Polar`;
+
+      // Actualizar chips activos
+      document.querySelectorAll('.chip-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-id') === newOriginId);
+      });
+
+      // Calcular nuevas metas
+      initialPositions = Object.keys(currentPositions).length > 0 ? { ...currentPositions } : null;
+      targetPositions = computeAnamorphicPositions(newOriginId, pxPerHour);
+
+      if (!initialPositions) {
+        initialPositions = { ...targetPositions };
+        currentPositions = { ...targetPositions };
+        renderStaticLayers();
+        renderDynamicLayers(currentPositions);
+      } else {
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        animStartTime = null;
+        animateTransition();
+      }
+
+      updateTelemetry(targetPositions);
+    }
+
+    /* Total de población peninsular (suma de las 47 provincias) */
+    const TOTAL_PENINSULAR_POP = Object.values(CITIES).reduce((acc, c) => acc + (c.pop || 0), 0);
+
+    /* ==========================================================================
+       8. TELEMETRÍA Y MÉTRICAS DEMOGRÁFICAS / ESPACIALES
+       ========================================================================== */
+    function updateTelemetry(positions) {
+      const otherCities = Object.keys(positions).filter(id => id !== currentOrigin).map(id => positions[id]);
+      const origPop = CITIES[currentOrigin].pop || 0;
+      
+      // 1. Tiempo Medio a Capitales (Media aritmética)
+      const totalHours = otherCities.reduce((acc, p) => acc + p.hours, 0);
+      const avgMin = Math.round((totalHours / otherCities.length) * 60);
+      document.getElementById('metric-avg-time').textContent = `${Math.floor(avgMin/60)}h ${(avgMin%60 < 10 ? '0' : '') + (avgMin%60)}m`;
+
+      // 2. Tiempos Medianos (Capitales y Población)
+      const sortedByTime = [...otherCities].sort((a, b) => a.hours - b.hours);
+      
+      // Mediana simple de capitales (promedio entre capital 23 y 24 de las 46 ordenadas)
+      const medianCapHours = (sortedByTime[22].hours + sortedByTime[23].hours) / 2;
+      const medCapMin = Math.round(medianCapHours * 60);
+      document.getElementById('metric-median-cap-time').textContent = `${Math.floor(medCapMin/60)}h ${(medCapMin%60 < 10 ? '0' : '') + (medCapMin%60)}m`;
+
+      // Mediana ponderada por población:
+      // ¿En cuánto tiempo se alcanza al 50% de la población peninsular española?
+      let cumPop = origPop; // Contando la población propia en el origen (0h)
+      let medianPopHours = 0;
+      if (cumPop >= TOTAL_PENINSULAR_POP / 2) {
+        medianPopHours = 0;
+      } else {
+        for (const p of sortedByTime) {
+          cumPop += (CITIES[p.id].pop || 0);
+          if (cumPop >= TOTAL_PENINSULAR_POP / 2) {
+            medianPopHours = p.hours;
+            break;
+          }
+        }
+      }
+      const medPopMin = Math.round(medianPopHours * 60);
+      document.getElementById('metric-median-pop-time').textContent = `${Math.floor(medPopMin/60)}h ${(medPopMin%60 < 10 ? '0' : '') + (medPopMin%60)}m`;
+
+      // 3. Accesibilidad < 3h: Territorial y Poblacional
+      const under3h = otherCities.filter(p => p.hours <= 3.0);
+      const pctUnder3hCap = Math.round((under3h.length / otherCities.length) * 100);
+      document.getElementById('metric-under-3h').textContent = `${pctUnder3hCap}%`;
+      document.getElementById('metric-under-3h-count').textContent = `${under3h.length}/46`;
+
+      // Población alcanzada en < 3h (incluyendo la propia provincia de origen)
+      const destPopUnder3h = under3h.reduce((acc, p) => acc + (CITIES[p.id].pop || 0), 0);
+      const totalPopUnder3h = origPop + destPopUnder3h;
+      const pctPopUnder3h = Math.round((totalPopUnder3h / TOTAL_PENINSULAR_POP) * 100);
+
+      document.getElementById('metric-pop-under-3h').textContent = `${pctPopUnder3h}% hab.`;
+      document.getElementById('metric-pop-abs').textContent = `${(totalPopUnder3h / 1e6).toFixed(1)}M`;
+      document.getElementById('metric-pop-bar').style.width = `${pctPopUnder3h}%`;
+
+      // 4. Enlace Más Rápido y Más Remoto
+      const fastest = sortedByTime[0];
+      const fMin = Math.round(fastest.hours * 60);
+      document.getElementById('metric-fastest-city').textContent = CITIES[fastest.id].name;
+      document.getElementById('metric-fastest-time').textContent = `${Math.floor(fMin/60)}h ${fMin%60}m (${CITIES[fastest.id].prov})`;
+
+      const slowest = sortedByTime[sortedByTime.length - 1];
+      const sMin = Math.round(slowest.hours * 60);
+      document.getElementById('metric-slowest-city').textContent = CITIES[slowest.id].name;
+      document.getElementById('metric-slowest-time').textContent = `${Math.floor(sMin/60)}h ${sMin%60}m (${CITIES[slowest.id].prov})`;
+    }
+
+    /* ==========================================================================
+       9. TOOLTIP INTERACTIVO
+       ========================================================================== */
+    function showTooltip(id, pos, e) {
+      const city = CITIES[id];
+      const route = pos.routing;
+      const totalMin = Math.round(pos.hours * 60);
+      const hh = Math.floor(totalMin / 60);
+      const mm = totalMin % 60;
+      const timeFormatted = `${hh}h ${mm < 10 ? '0' : ''}${mm}m (${totalMin} min)`;
+
+      // Velocidad comercial efectiva
+      const speed = pos.hours > 0 ? Math.round(pos.distKm / pos.hours) : 0;
+
+      // Efecto anamórfico: comparar tiempo real vs tiempo geográfico @ 100 km/h
+      const refHours = pos.distKm / 100;
+      const deltaPct = Math.round(((pos.hours - refHours) / refHours) * 100);
+      const effectStr = deltaPct <= 0 
+        ? `Contracción espacial (${Math.abs(deltaPct)}% más rápido)`
+        : `Penalización periférica (+${deltaPct}% más lento)`;
+
+      // Datos de población provincial
+      const popM = (city.pop / 1e6).toFixed(2);
+      const popPct = ((city.pop / TOTAL_PENINSULAR_POP) * 100).toFixed(1);
+
+      // Badge de modo
+      const badge = document.getElementById('tt-badge');
+      const mode = route.dominantMode;
+      badge.className = `tooltip-badge ${mode === 'alta_velocidad' ? 'hspeed' : (mode === 'tren_convencional' ? 'train' : 'bus')}`;
+      badge.textContent = mode === 'alta_velocidad' ? 'Alta Velocidad' : (mode === 'tren_convencional' ? 'Convencional' : 'Autobús / Mixto');
+
+      document.getElementById('tt-name').textContent = `${city.name} (${city.prov})`;
+      document.getElementById('tt-time').textContent = timeFormatted;
+      document.getElementById('tt-dist').textContent = `${Math.round(pos.distKm)} km`;
+      document.getElementById('tt-speed').textContent = `${speed} km/h efectiva`;
+      document.getElementById('tt-effect').textContent = effectStr;
+
+      // Ruta con transbordos y población
+      const pathNames = route.path.map(cid => CITIES[cid].name);
+      document.getElementById('tt-route').innerHTML = `
+        <div style="margin-bottom: 5px; color: #94a3b8;">
+          👥 <strong>Población provincial:</strong> ${popM}M hab. (${popPct}% España)
+        </div>
+        <strong>Ruta óptima (${route.path.length - 1} etapas):</strong><br>
+        ${pathNames.join(' ➔ ')}
+      `;
+
+      tooltip.style.display = 'block';
+      updateTooltipPosition(e);
+    }
+
+    function updateTooltipPosition(e) {
+      const containerRect = document.getElementById('canvas-wrapper').getBoundingClientRect();
+      const x = e.clientX - containerRect.left;
+      const y = e.clientY - containerRect.top;
+      tooltip.style.left = `${x}px`;
+      tooltip.style.top = `${y}px`;
+    }
+
+    function hideTooltip() {
+      tooltip.style.display = 'none';
+    }
+
+    /* ==========================================================================
+       10. CONTROLADORES DE EVENTOS Y BÚSQUEDA
+       ========================================================================== */
+    // Chips rápidos de capitales principales
+    const keyOrigins = ['madrid', 'barcelona', 'valencia', 'sevilla', 'zaragoza', 'malaga', 'bilbao', 'coruna', 'valladolid'];
+    const quickContainer = document.getElementById('quick-origins');
+    keyOrigins.forEach(id => {
+      const btn = document.createElement('button');
+      btn.className = `chip-btn ${id === currentOrigin ? 'active' : ''}`;
+      btn.setAttribute('data-id', id);
+      btn.textContent = CITIES[id].name;
+      btn.addEventListener('click', () => setOrigin(id));
+      quickContainer.appendChild(btn);
+    });
+
+    // Búsqueda con autocompletado
+    const searchInput = document.getElementById('city-search');
+    const autocompleteList = document.getElementById('autocomplete-list');
+
+    searchInput.addEventListener('input', () => {
+      const val = searchInput.value.trim().toLowerCase();
+      autocompleteList.innerHTML = '';
+      if (!val) {
+        autocompleteList.classList.remove('open');
+        return;
+      }
+
+      const matches = Object.keys(CITIES).filter(id => {
+        const c = CITIES[id];
+        return c.name.toLowerCase().includes(val) || 
+               c.prov.toLowerCase().includes(val) || 
+               c.cc.toLowerCase().includes(val);
+      });
+
+      if (matches.length > 0) {
+        autocompleteList.classList.add('open');
+        matches.forEach(id => {
+          const item = document.createElement('div');
+          item.className = 'autocomplete-item';
+          item.innerHTML = `
+            <strong>${CITIES[id].name}</strong>
+            <span class="region">${CITIES[id].prov} (${CITIES[id].cc})</span>
+          `;
+          item.addEventListener('click', () => {
+            setOrigin(id);
+            searchInput.value = '';
+            autocompleteList.classList.remove('open');
+          });
+          autocompleteList.appendChild(item);
+        });
+      } else {
+        autocompleteList.classList.remove('open');
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!searchInput.contains(e.target) && !autocompleteList.contains(e.target)) {
+        autocompleteList.classList.remove('open');
+      }
+    });
+
+    // Filtros de Capas
+    toggleRings.addEventListener('change', () => {
+      ringsLayer.style.display = toggleRings.checked ? 'block' : 'none';
+    });
+
+    toggleHull.addEventListener('change', () => {
+      hullPath.style.display = toggleHull.checked ? 'block' : 'none';
+    });
+
+    toggleLines.addEventListener('change', () => {
+      linesLayer.style.display = toggleLines.checked ? 'block' : 'none';
+    });
+
+    toggleGhost.addEventListener('change', () => {
+      ghostLayer.style.display = toggleGhost.checked ? 'block' : 'none';
+    });
+
+    toggleLabels.addEventListener('change', () => {
+      renderDynamicLayers(currentPositions);
+    });
+
+    // Slider de Escala Radial
+    scaleSlider.addEventListener('input', (e) => {
+      pxPerHour = parseInt(e.target.value, 10);
+      scaleValueLabel.textContent = `${pxPerHour} px/h`;
+      renderStaticLayers();
+      targetPositions = computeAnamorphicPositions(currentOrigin, pxPerHour);
+      currentPositions = targetPositions;
+      renderDynamicLayers(currentPositions);
+    });
+
+    /* ==========================================================================
+       11. CONTROL DE ZOOM Y PANEO DEL LIENZO SVG
+       ========================================================================== */
+    function updateTransform() {
+      viewportGroup.setAttribute('transform', `translate(${panX}, ${panY}) scale(${zoomLevel})`);
+    }
+
+    const svgCanvas = document.getElementById('svg-canvas');
+
+    svgCanvas.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.city-node-group')) return;
+      isDragging = true;
+      dragStartX = e.clientX - panX;
+      dragStartY = e.clientY - panY;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      panX = e.clientX - dragStartX;
+      panY = e.clientY - dragStartY;
+      updateTransform();
+    });
+
+    window.addEventListener('mouseup', () => { isDragging = false; });
+
+    svgCanvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+      zoomLevel = Math.max(0.5, Math.min(3.5, zoomLevel * zoomFactor));
+      updateTransform();
+    }, { passive: false });
+
+    document.getElementById('btn-zoom-in').addEventListener('click', () => {
+      zoomLevel = Math.min(3.5, zoomLevel * 1.2);
+      updateTransform();
+    });
+
+    document.getElementById('btn-zoom-out').addEventListener('click', () => {
+      zoomLevel = Math.max(0.5, zoomLevel / 1.2);
+      updateTransform();
+    });
+
+    document.getElementById('btn-zoom-reset').addEventListener('click', () => {
+      zoomLevel = 1;
+      panX = 525;
+      panY = 460;
+      updateTransform();
+    });
+
+    // Inicialización al cargar la página
+    setOrigin('malaga');
+  </script>
+</body>
+</html>

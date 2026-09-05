@@ -1,0 +1,12 @@
+# Ignorar todo por defecto en la raíz
+/*
+
+# Permitir el propio archivo .gitignore
+!.gitignore
+
+# Permitir index.html
+!index.html
+
+# Permitir el directorio design y todo su contenido
+!design/
+!design/**
