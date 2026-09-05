@@ -4,8 +4,10 @@
 # Permitir el propio archivo .gitignore
 !.gitignore
 
-# Permitir index.html
+# Permitir index.html y README.md
 !index.html
+!README.md
+!readme.md
 
 # Permitir el directorio design y todo su contenido
 !design/
