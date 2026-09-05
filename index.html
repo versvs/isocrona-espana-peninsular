@@ -544,7 +544,7 @@
             <h3 style="font-family:var(--font-heading); font-size:16.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em">Consideraciones del Modelo</h3>
           </div>
           <p style="color:var(--color-neutral-700); font-size:12.5px">
-            El modelo actual simula conexiones sincronizadas óptimas con una penalización fija de correspondencia, sin incorporar la frecuencia horaria (esperas entre salidas de servicios con pocas frecuencias diarias). Futuras versiones del proyecto podrán enriquecerse con la incorporación de ciudades no capitales de alta densidad (como Vigo, Gijón, Cartagena, Jerez de la Frontera, Elche o Algeciras) e itinerarios transfronterizos con Portugal y Francia. También podrían incluirse otros modos de transporte como avión o carretera con vehículo privado.
+            El modelo actual simula conexiones sincronizadas óptimas con una penalización fija de correspondencia, sin incorporar la frecuencia horaria (esperas entre salidas de servicios con pocas frecuencias diarias). Futuras versiones del proyecto podrán enriquecerse con la incorporación de ciudades no capitales de alta densidad (como Vigo, Gijón, Cartagena, Jerez de la Frontera, Elche o Algeciras) e itinerarios transfronterizos con Portugal y Francia. También podrían incluirse otros modos de trans  porte como avión o carretera con vehículo privado.
           </p>
         </section>
 
@@ -779,6 +779,118 @@
     render();
   }
 
+  function setOrigin(name) {
+    if (!name || !byName[name]) return;
+    state.origin = name;
+    state.query = '';
+    state.hover = null;
+    const filterInput = document.getElementById('city-filter-input');
+    if (filterInput) filterInput.value = '';
+    render();
+  }
+
+  function updateReadout(hoveredName) {
+    const readoutKicker = document.getElementById('readout-kicker');
+    const readoutTitle = document.getElementById('readout-title');
+    const readoutSub = document.getElementById('readout-sub');
+    const readoutLegs = document.getElementById('readout-legs');
+    const col = PAL[state.theme] || PAL.papel;
+
+    if (hoveredName && state.currentDests) {
+      const sel = state.currentDests.find(d => d.name === hoveredName);
+      if (sel) {
+        readoutKicker.textContent = "Itinerario más rápido";
+        readoutTitle.textContent = sel.name;
+        const legWord = sel.legs.length === 1 ? "tramo" : "tramos";
+        const popM = (sel.pop / 1e6).toFixed(2);
+        const popPct = ((sel.pop / TOTAL_PENINSULAR_POP) * 100).toFixed(1);
+        
+        const medDiff = sel.min - state.currentMedianCapMin;
+        const medCompStr = Math.abs(medDiff) < 2 
+          ? "en la mediana" 
+          : (medDiff < 0 ? `${fmt(-medDiff)} bajo la mediana` : `+${fmt(medDiff)} sobre la mediana`);
+
+        readoutSub.innerHTML = `${fmt(sel.min)} · ${sel.legs.length} ${legWord} · ${Math.round(sel.km)} km reales · <span style="color:var(--color-accent-700)">${medCompStr}</span><br><span style="color:var(--color-neutral-600)">👥 ${popM}M hab. prov. (${popPct}% España)</span>`;
+        
+        readoutLegs.innerHTML = '';
+        sel.legs.forEach(l => {
+          const legDiv = document.createElement('div');
+          legDiv.style.display = 'grid';
+          legDiv.style.gridTemplateColumns = '7px 1fr auto';
+          legDiv.style.alignItems = 'center';
+          legDiv.style.gap = '7px';
+          legDiv.style.marginTop = '5px';
+          legDiv.style.fontSize = '11.5px';
+          legDiv.innerHTML = `
+            <span style="width:7px; height:7px; background:${col[l.mode]}"></span>
+            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis">${MODE[l.mode].label} · ${l.from} → ${l.to}</span>
+            <span style="font-family:var(--font-heading); font-variant-numeric:tabular-nums; color:var(--color-neutral-700)">${fmt(l.min)}</span>
+          `;
+          readoutLegs.appendChild(legDiv);
+        });
+        return;
+      }
+    }
+    readoutKicker.textContent = "Lectura";
+    readoutTitle.textContent = "Sin selección";
+    readoutSub.textContent = "Pasa el cursor sobre una capital para ver su itinerario";
+    readoutLegs.innerHTML = '';
+  }
+
+  function setHover(cityName) {
+    state.hover = cityName;
+    const col = PAL[state.theme] || PAL.papel;
+
+    // 1. Filas de destinos en la columna izquierda
+    const rows = document.querySelectorAll('#destinations-list .destrow');
+    rows.forEach(r => {
+      r.style.background = (r.dataset.city === cityName) ? 'var(--color-accent-100)' : 'transparent';
+    });
+
+    // 2. Nodos rect en SVG
+    const nodes = document.querySelectorAll('#layer-nodes rect');
+    nodes.forEach(rect => {
+      const isHot = (rect.dataset.city === cityName);
+      const s = isHot ? 11 : 7;
+      const x = parseFloat(rect.dataset.x);
+      const y = parseFloat(rect.dataset.y);
+      rect.setAttribute('x', x - s / 2);
+      rect.setAttribute('y', y - s / 2);
+      rect.setAttribute('width', s);
+      rect.setAttribute('height', s);
+      rect.setAttribute('fill', isHot ? 'var(--color-accent-900)' : 'var(--color-bg)');
+      rect.setAttribute('stroke', isHot ? 'var(--color-accent-900)' : (rect.dataset.baseStroke || col.bus));
+    });
+
+    // 3. Radios de conexión (legs) en SVG
+    const legs = document.querySelectorAll('#layer-legs line');
+    legs.forEach(line => {
+      const isHot = (line.dataset.city === cityName);
+      const baseW = parseFloat(line.dataset.baseW) || 1.8;
+      line.setAttribute('stroke', isHot ? 'var(--color-accent-900)' : (line.dataset.baseStroke || col.bus));
+      line.setAttribute('stroke-width', isHot ? (baseW + 1.4) : baseW);
+      line.setAttribute('opacity', cityName ? (isHot ? '1' : '0.28') : '0.85');
+    });
+
+    // 4. Etiquetas flotantes en el mapa
+    const labels = document.querySelectorAll('#map-overlay-labels [data-city-label]');
+    labels.forEach(lbl => {
+      const isHot = (lbl.dataset.cityLabel === cityName);
+      const nameEl = lbl.querySelector('.lbl-name');
+      const timeEl = lbl.querySelector('.lbl-time');
+      if (nameEl) {
+        nameEl.style.fontWeight = isHot ? '600' : '500';
+        nameEl.style.color = isHot ? 'var(--color-accent-900)' : 'var(--color-text)';
+      }
+      if (timeEl) {
+        timeEl.style.color = isHot ? 'var(--color-accent-700)' : 'var(--color-neutral-700)';
+      }
+    });
+
+    // 5. Panel de lectura
+    updateReadout(cityName);
+  }
+
   function render() {
     const { origin, zoom, query, hover, layers, box, theme } = state;
     const col = PAL[theme] || PAL.papel;
@@ -802,6 +914,8 @@
         ang: Math.atan2(km1, km0), km: Math.hypot(km0, km1)
       };
     }).sort((a, b) => a.min - b.min);
+
+    state.currentDests = dests;
 
     const maxMin = dests[dests.length - 1].min;
     const maxH = Math.ceil(maxMin / 60);
@@ -928,6 +1042,9 @@
         const m = MODE[d.mode];
         const hot = (hover === d.name);
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.dataset.city = d.name;
+        line.dataset.baseStroke = col[d.mode];
+        line.dataset.baseW = m.w;
         line.setAttribute('x1', cx);
         line.setAttribute('y1', cy);
         line.setAttribute('x2', pos[d.name].x);
@@ -947,6 +1064,10 @@
       const hot = (hover === d.name);
       const s = hot ? 11 : 7;
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.dataset.city = d.name;
+      rect.dataset.x = pos[d.name].x;
+      rect.dataset.y = pos[d.name].y;
+      rect.dataset.baseStroke = col[d.mode];
       rect.setAttribute('x', pos[d.name].x - s / 2);
       rect.setAttribute('y', pos[d.name].y - s / 2);
       rect.setAttribute('width', s);
@@ -956,14 +1077,11 @@
       rect.setAttribute('stroke-width', '1.25');
       rect.style.cursor = 'pointer';
 
-      rect.addEventListener('mouseenter', () => { state.hover = d.name; render(); });
-      rect.addEventListener('mouseleave', () => { state.hover = null; render(); });
-      rect.addEventListener('click', () => {
-        state.origin = d.name;
-        state.query = '';
-        state.hover = null;
-        document.getElementById('city-filter-input').value = '';
-        render();
+      rect.addEventListener('mouseenter', () => setHover(d.name));
+      rect.addEventListener('mouseleave', () => setHover(null));
+      rect.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setOrigin(d.name);
       });
 
       gNodes.appendChild(rect);
@@ -1054,6 +1172,7 @@
           if (!clash || hot) {
             placed.push([bx, by, w + 4, LH]);
             const lbl = document.createElement('div');
+            lbl.dataset.cityLabel = d.name;
             lbl.style.position = 'absolute';
             lbl.style.left = bx.toFixed(1) + 'px';
             lbl.style.top = by.toFixed(1) + 'px';
@@ -1061,10 +1180,18 @@
             lbl.style.textAlign = align;
             lbl.style.lineHeight = '1.05';
             lbl.style.textShadow = '0 0 3px var(--color-bg), 0 0 3px var(--color-bg), 0 0 3px var(--color-bg)';
+            lbl.style.pointerEvents = 'auto';
+            lbl.style.cursor = 'pointer';
             lbl.innerHTML = `
-              <div style="font-size:14.5px; font-weight:${hot ? 600 : 500}; color:${hot ? 'var(--color-accent-900)' : 'var(--color-text)'}; white-space:nowrap">${d.name}</div>
-              <div style="font-size:12.5px; color:${hot ? 'var(--color-accent-700)' : 'var(--color-neutral-700)'}; font-variant-numeric:tabular-nums; white-space:nowrap">${fmt(d.min)}</div>
+              <div class="lbl-name" style="font-size:14.5px; font-weight:${hot ? 600 : 500}; color:${hot ? 'var(--color-accent-900)' : 'var(--color-text)'}; white-space:nowrap">${d.name}</div>
+              <div class="lbl-time" style="font-size:12.5px; color:${hot ? 'var(--color-accent-700)' : 'var(--color-neutral-700)'}; font-variant-numeric:tabular-nums; white-space:nowrap">${fmt(d.min)}</div>
             `;
+            lbl.addEventListener('mouseenter', () => setHover(d.name));
+            lbl.addEventListener('mouseleave', () => setHover(null));
+            lbl.addEventListener('click', (e) => {
+              e.stopPropagation();
+              setOrigin(d.name);
+            });
             overlay.appendChild(lbl);
             done = true;
             break;
@@ -1078,10 +1205,9 @@
     document.getElementById('ui-scale-val').textContent = zoom + '%';
 
     // 9. Cálculo de métricas estadísticas (Mediana simple y Mediana poblacional)
-    // Mediana simple de capitales (promedio entre capital 23 y 24)
     const medianCapMin = (dests[22].min + dests[23].min) / 2;
+    state.currentMedianCapMin = medianCapMin;
 
-    // Mediana ponderada por población:
     let cumPop = o.pop;
     let medianPopMin = 0;
     if (cumPop >= TOTAL_PENINSULAR_POP / 2) {
@@ -1103,8 +1229,14 @@
 
     const destListEl = document.getElementById('destinations-list');
     destListEl.innerHTML = '';
+    destListEl.onclick = (e) => {
+      const row = e.target.closest('.destrow');
+      if (row && row.dataset.city) {
+        setOrigin(row.dataset.city);
+      }
+    };
+
     filteredRows.forEach((d, idx) => {
-      // Hito visual en la mediana de capitales (al llegar al 50% de destinos)
       if (!q && idx === 23) {
         const medMarker = document.createElement('div');
         medMarker.style.padding = '3px var(--space-4)';
@@ -1123,6 +1255,7 @@
 
       const row = document.createElement('div');
       row.className = 'destrow';
+      row.dataset.city = d.name;
       row.style.display = 'grid';
       row.style.gridTemplateColumns = '1fr auto';
       row.style.alignItems = 'center';
@@ -1145,68 +1278,23 @@
         <div style="font-family:var(--font-heading); font-size:14px; font-variant-numeric:tabular-nums; color:${timeCol}">${fmt(d.min)}</div>
       `;
 
-      row.addEventListener('mouseenter', () => { state.hover = d.name; render(); });
-      row.addEventListener('mouseleave', () => { state.hover = null; render(); });
-      row.addEventListener('click', () => {
-        state.origin = d.name;
-        state.query = '';
-        state.hover = null;
-        document.getElementById('city-filter-input').value = '';
-        render();
+      row.addEventListener('mouseenter', () => setHover(d.name));
+      row.addEventListener('mouseleave', () => setHover(null));
+      row.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setOrigin(d.name);
       });
 
       destListEl.appendChild(row);
     });
 
     // 10. Columna Derecha: 03 Lectura
-    const sel = hover ? dests.find(d => d.name === hover) : null;
-    const readoutKicker = document.getElementById('readout-kicker');
-    const readoutTitle = document.getElementById('readout-title');
-    const readoutSub = document.getElementById('readout-sub');
-    const readoutLegs = document.getElementById('readout-legs');
-
-    if (sel) {
-      readoutKicker.textContent = "Itinerario más rápido";
-      readoutTitle.textContent = sel.name;
-      const legWord = sel.legs.length === 1 ? "tramo" : "tramos";
-      const popM = (sel.pop / 1e6).toFixed(2);
-      const popPct = ((sel.pop / TOTAL_PENINSULAR_POP) * 100).toFixed(1);
-      
-      const medDiff = sel.min - medianCapMin;
-      const medCompStr = Math.abs(medDiff) < 2 
-        ? "en la mediana" 
-        : (medDiff < 0 ? `${fmt(-medDiff)} bajo la mediana` : `+${fmt(medDiff)} sobre la mediana`);
-
-      readoutSub.innerHTML = `${fmt(sel.min)} · ${sel.legs.length} ${legWord} · ${Math.round(sel.km)} km reales · <span style="color:var(--color-accent-700)">${medCompStr}</span><br><span style="color:var(--color-neutral-600)">👥 ${popM}M hab. prov. (${popPct}% España)</span>`;
-      
-      readoutLegs.innerHTML = '';
-      sel.legs.forEach(l => {
-        const legDiv = document.createElement('div');
-        legDiv.style.display = 'grid';
-        legDiv.style.gridTemplateColumns = '7px 1fr auto';
-        legDiv.style.alignItems = 'center';
-        legDiv.style.gap = '7px';
-        legDiv.style.marginTop = '5px';
-        legDiv.style.fontSize = '11.5px';
-        legDiv.innerHTML = `
-          <span style="width:7px; height:7px; background:${col[l.mode]}"></span>
-          <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis">${MODE[l.mode].label} · ${l.from} → ${l.to}</span>
-          <span style="font-family:var(--font-heading); font-variant-numeric:tabular-nums; color:var(--color-neutral-700)">${fmt(l.min)}</span>
-        `;
-        readoutLegs.appendChild(legDiv);
-      });
-    } else {
-      readoutKicker.textContent = "Lectura";
-      readoutTitle.textContent = "Sin selección";
-      readoutSub.textContent = "Pasa el cursor sobre una capital para ver su itinerario";
-      readoutLegs.innerHTML = '';
-    }
+    updateReadout(hover);
 
     // 11. Columna Derecha: 04 Accesibilidad y Estadísticas (Territorial + Demográfica)
     const under3Capitals = dests.filter(d => d.min <= 180);
     const pctUnder3Cap = Math.round((under3Capitals.length / dests.length) * 100);
 
-    // Población alcanzada en <3h (sumando destino + población de la provincia origen)
     const destPopUnder3h = under3Capitals.reduce((acc, d) => acc + d.pop, 0);
     const totalPopUnder3h = o.pop + destPopUnder3h;
     const pctPopUnder3h = Math.round((totalPopUnder3h / TOTAL_PENINSULAR_POP) * 100);
@@ -1293,6 +1381,19 @@
       state.query = e.target.value;
       render();
     });
+    filterInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const q = state.query.trim().toLowerCase();
+        if (!q) return;
+        const match = (state.currentDests || []).find(d => 
+          d.name.toLowerCase().includes(q) || d.prov.toLowerCase().includes(q)
+        );
+        if (match) {
+          setOrigin(match.name);
+        }
+      }
+    });
 
     // Slider de zoom
     const zoomSlider = document.getElementById('zoom-slider');
@@ -1303,15 +1404,11 @@
 
     // Botón Restablecer vista
     document.getElementById('btn-reset-view').addEventListener('click', () => {
-      state.origin = 'Madrid';
       state.zoom = 100;
-      state.query = '';
-      state.hover = null;
       state.layers = { rings: true, hull: true, legs: true, ghost: false, labels: true };
-      filterInput.value = '';
       zoomSlider.value = 100;
       setupLayerToggles();
-      render();
+      setOrigin('Madrid');
     });
 
     // Modal de Ayuda ("Cómo se lee")
